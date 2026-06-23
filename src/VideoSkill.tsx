@@ -108,19 +108,18 @@ const BottomGradient: React.FC = () => (
 
 const Watermark: React.FC = () => (
   <AbsoluteFill
-    style={{ justifyContent: 'flex-end', alignItems: 'flex-end', padding: '0 40px 52px 0', pointerEvents: 'none' }}
+    style={{ justifyContent: 'flex-end', alignItems: 'flex-end', padding: '0 28px 40px 0', pointerEvents: 'none' }}
   >
-    <span
+    <Img
+      src={staticFile('logo.jpg')}
       style={{
-        color: 'rgba(255,255,255,0.22)',
-        fontSize: 52,
-        fontFamily: 'PingFang TC, Microsoft JhengHei, sans-serif',
-        fontWeight: 700,
-        letterSpacing: 4,
+        width: 100,
+        height: 100,
+        objectFit: 'contain',
+        opacity: 0.22,
+        mixBlendMode: 'screen',
       }}
-    >
-      紅賊
-    </span>
+    />
   </AbsoluteFill>
 );
 
