@@ -54,6 +54,7 @@ jobs:
           PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
           SEGMENTS_JSON: ${{ inputs.segments_json }}
           CATEGORY: ${{ inputs.category }}
+          JAMENDO_CLIENT_ID: ${{ secrets.JAMENDO_CLIENT_ID }}
         run: python scripts/render.py
 
       - name: Create release with video

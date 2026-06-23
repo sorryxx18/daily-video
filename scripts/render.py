@@ -32,6 +32,7 @@ SEGMENTS: list[list[str]] = json.loads(segments_raw)
 
 sys.path.insert(0, str(SCRIPT_DIR / "scripts"))
 from pexels_utils import download_pexels_video
+from music_utils import download_jamendo_music
 
 
 async def generate_tts(text: str, path: str) -> float:
@@ -97,6 +98,12 @@ async def main() -> None:
     concat_audio(audio_paths, full_audio)
     shutil.copy(full_audio, PUBLIC_DIR / "tts.mp3")
 
+    print("🎵 下載背景音樂...")
+    bgm_tmp = str(TMP / "bgm.mp3")
+    has_bgm = download_jamendo_music(CATEGORY, bgm_tmp)
+    if has_bgm:
+        shutil.copy(bgm_tmp, PUBLIC_DIR / "bgm.mp3")
+
     props = {
         "subtitles": subtitles,
         "audioSrc": "tts.mp3",
@@ -104,6 +111,9 @@ async def main() -> None:
         "durationInSeconds": round(current_time + 0.5, 2),
         "category": CATEGORY,
     }
+    if has_bgm:
+        props["bgMusicSrc"] = "bgm.mp3"
+        props["bgMusicVolume"] = 0.15
 
     print(f"🎬 Remotion 渲染中... (總時長 {current_time:.1f}s)")
     subprocess.run(
