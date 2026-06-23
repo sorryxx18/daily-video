@@ -4,19 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       raw_text:
-        description: '原始文字內容（天氣報告、課程筆記等）'
+        description: '原始文字內容'
         required: true
         type: string
-      style:
-        description: '影片風格'
-        required: false
-        default: '一般'
-        type: choice
-        options:
-          - 天氣快報
-          - AI教學
-          - 新聞摘要
-          - 一般
 
 jobs:
   render:
@@ -49,19 +39,10 @@ jobs:
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           RAW_TEXT: ${{ inputs.raw_text }}
-          STYLE: ${{ inputs.style }}
         run: |
-          python scripts/generate_segments.py > /tmp/segments.json
-          echo "SEGMENTS_JSON=$(cat /tmp/segments.json)" >> $GITHUB_ENV
-
-      - name: Set category label
-        run: |
-          case "${{ inputs.style }}" in
-            天氣快報) echo "CATEGORY=⛈️ 天氣快報" >> $GITHUB_ENV ;;
-            AI教學)   echo "CATEGORY=🤖 AI教學" >> $GITHUB_ENV ;;
-            新聞摘要) echo "CATEGORY=📰 新聞摘要" >> $GITHUB_ENV ;;
-            *)        echo "CATEGORY=📹 每日快報" >> $GITHUB_ENV ;;
-          esac
+          python scripts/generate_segments.py > /tmp/ai_output.json
+          echo "CATEGORY=$(python3 -c "import json; d=json.load(open('/tmp/ai_output.json')); print(d['category'])")" >> $GITHUB_ENV
+          echo "SEGMENTS_JSON=$(python3 -c "import json; d=json.load(open('/tmp/ai_output.json')); print(json.dumps(d['segments']))")" >> $GITHUB_ENV
 
       - name: Render video
         env:
@@ -72,9 +53,6 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: video-${{ github.run_number }}
-          name: "影片 #${{ github.run_number }} — ${{ inputs.style }}"
-          body: |
-            風格：${{ inputs.style }}
-            產生時間：${{ github.event.head_commit.timestamp || 'manual trigger' }}
+          name: "影片 #${{ github.run_number }}"
           files: output/video-compressed.mp4
           token: ${{ secrets.GITHUB_TOKEN }}

@@ -24,9 +24,10 @@
       width: 100%;
       max-width: 640px;
     }
-    h1 { font-size: 22px; font-weight: 700; margin-bottom: 24px; color: #fff; }
+    h1 { font-size: 22px; font-weight: 700; margin-bottom: 6px; color: #fff; }
+    .subtitle { font-size: 13px; color: #555566; margin-bottom: 24px; }
     label { display: block; font-size: 13px; color: #8888aa; margin-bottom: 6px; margin-top: 16px; }
-    textarea, select, input {
+    textarea, input {
       width: 100%;
       background: #12121a;
       border: 1px solid #2a2a38;
@@ -39,10 +40,7 @@
       transition: border-color 0.2s;
     }
     textarea:focus, input:focus { border-color: #5555cc; }
-    textarea { resize: vertical; min-height: 160px; line-height: 1.6; }
-    select { cursor: pointer; }
-    .row { display: flex; gap: 12px; margin-top: 16px; }
-    .row > * { flex: 1; }
+    textarea { resize: vertical; min-height: 180px; line-height: 1.6; }
     button {
       width: 100%;
       margin-top: 20px;
@@ -64,13 +62,14 @@
       border-radius: 8px;
       font-size: 14px;
       display: none;
+      line-height: 1.6;
     }
     #status.running { background: #1a2a1a; border: 1px solid #2a4a2a; color: #88cc88; }
     #status.done    { background: #1a1a2a; border: 1px solid #3a3a6a; color: #aaaaff; }
     #status.error   { background: #2a1a1a; border: 1px solid #4a2a2a; color: #ff8888; }
-    #download-link {
+    a.dl-btn {
       display: inline-block;
-      margin-top: 12px;
+      margin-top: 10px;
       padding: 10px 20px;
       background: #225522;
       border: 1px solid #336633;
@@ -80,58 +79,48 @@
       font-weight: 600;
       font-size: 14px;
     }
-    #download-link:hover { background: #336633; }
-    .pat-toggle { font-size: 12px; color: #5555aa; cursor: pointer; margin-top: 4px; text-decoration: underline; }
-    .hint { font-size: 12px; color: #555566; margin-top: 6px; }
+    a.dl-btn:hover { background: #336633; }
+    .hint { font-size: 12px; color: #555566; margin-top: 5px; }
+    details { margin-top: 20px; }
+    summary { font-size: 13px; color: #555588; cursor: pointer; }
+    summary:hover { color: #8888cc; }
+    .settings-body { margin-top: 12px; padding: 16px; background: #12121a; border-radius: 8px; border: 1px solid #2a2a38; }
   </style>
 </head>
 <body>
 <div class="card">
   <h1>📹 Daily Video Generator</h1>
+  <p class="subtitle">貼上任何文字，AI 自動生成短影片</p>
 
-  <label>原始文字內容</label>
-  <textarea id="raw-text" placeholder="貼上天氣報告、課程筆記、新聞摘要…任何文字都可以。"></textarea>
-
-  <div class="row">
-    <div>
-      <label>影片風格</label>
-      <select id="style">
-        <option value="天氣快報">⛈️ 天氣快報</option>
-        <option value="AI教學">🤖 AI教學</option>
-        <option value="新聞摘要">📰 新聞摘要</option>
-        <option value="一般">📹 一般</option>
-      </select>
-    </div>
-    <div>
-      <label>Repository</label>
-      <input id="repo" type="text" value="sorryxx18/daily-video" placeholder="owner/repo">
-    </div>
-  </div>
-
-  <label>GitHub Personal Access Token</label>
-  <input id="pat" type="password" placeholder="ghp_xxxxxxxxxxxx">
-  <div class="hint">需要 workflow + contents scope。只存在你的瀏覽器 localStorage，不會傳到任何地方。</div>
-  <div class="pat-toggle" onclick="togglePat()">顯示 / 隱藏</div>
+  <label>原始內容</label>
+  <textarea id="raw-text" placeholder="貼上天氣報告、課程筆記、新聞摘要…任何文字都可以。AI 會自動判斷風格並生成腳本。"></textarea>
 
   <button id="submit-btn" onclick="submitJob()">🎬 生成影片</button>
 
   <div id="status"></div>
+
+  <details id="settings-panel">
+    <summary>⚙️ 設定（首次使用需填寫）</summary>
+    <div class="settings-body">
+      <label>Worker URL</label>
+      <input id="worker-url" type="text" placeholder="https://daily-video-trigger.你的帳號.workers.dev">
+      <p class="hint">Cloudflare Worker 的網址，用來安全地觸發 GitHub Actions。設定一次即可。</p>
+      <button style="margin-top:12px; background:#333344; font-size:13px; padding:8px;" onclick="saveSettings()">儲存設定</button>
+    </div>
+  </details>
 </div>
 
 <script>
   const $ = id => document.getElementById(id);
 
-  // Restore from localStorage
   window.onload = () => {
-    const saved = localStorage.getItem('dv_pat');
-    if (saved) $('pat').value = saved;
-    const repo = localStorage.getItem('dv_repo');
-    if (repo) $('repo').value = repo;
+    const url = localStorage.getItem('dv_worker_url');
+    if (url) $('worker-url').value = url;
   };
 
-  function togglePat() {
-    const el = $('pat');
-    el.type = el.type === 'password' ? 'text' : 'password';
+  function saveSettings() {
+    localStorage.setItem('dv_worker_url', $('worker-url').value.trim());
+    setStatus('✅ 設定已儲存', 'done');
   }
 
   function setStatus(msg, type) {
@@ -143,124 +132,118 @@
 
   async function submitJob() {
     const rawText = $('raw-text').value.trim();
-    const style = $('style').value;
-    const repo = $('repo').value.trim();
-    const pat = $('pat').value.trim();
+    const workerUrl = ($('worker-url').value || localStorage.getItem('dv_worker_url') || '').trim();
 
     if (!rawText) return setStatus('請貼上原始文字內容。', 'error');
-    if (!pat) return setStatus('請填入 GitHub PAT。', 'error');
-
-    localStorage.setItem('dv_pat', pat);
-    localStorage.setItem('dv_repo', repo);
+    if (!workerUrl) {
+      $('settings-panel').open = true;
+      return setStatus('請先在下方設定填入 Worker URL。', 'error');
+    }
 
     $('submit-btn').disabled = true;
     setStatus('⏳ 觸發 GitHub Actions...', 'running');
 
-    const [owner, repoName] = repo.split('/');
-    const triggerUrl = `https://api.github.com/repos/${owner}/${repoName}/actions/workflows/render.yml/dispatches`;
-
-    // Record timestamp before trigger to find the run later
-    const triggerTime = new Date().toISOString();
-
-    const triggerRes = await fetch(triggerUrl, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${pat}`,
-        'Accept': 'application/vnd.github+json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        ref: 'main',
-        inputs: { raw_text: rawText, style: style },
-      }),
-    });
-
-    if (!triggerRes.ok) {
-      const err = await triggerRes.text();
-      setStatus(`❌ 觸發失敗 (${triggerRes.status}): ${err}`, 'error');
+    let triggerTime;
+    try {
+      const res = await fetch(workerUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ raw_text: rawText }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.triggered) {
+        setStatus(`❌ 觸發失敗：${data.error || res.status}`, 'error');
+        $('submit-btn').disabled = false;
+        return;
+      }
+      triggerTime = data.trigger_time;
+    } catch (e) {
+      setStatus(`❌ 無法連線到 Worker：${e.message}`, 'error');
       $('submit-btn').disabled = false;
       return;
     }
 
-    setStatus('✅ 已觸發，等待 Actions 啟動...', 'running');
-    await new Promise(r => setTimeout(r, 5000));
-    pollRun(owner, repoName, pat, triggerTime);
+    setStatus('✅ 已觸發，等待 Actions 啟動（約 30 秒）...', 'running');
+    await new Promise(r => setTimeout(r, 8000));
+    pollRun(triggerTime);
   }
 
-  async function pollRun(owner, repo, pat, triggerTime) {
-    const headers = {
-      'Authorization': `Bearer ${pat}`,
-      'Accept': 'application/vnd.github+json',
-    };
-
+  async function pollRun(triggerTime) {
+    const REPO = 'sorryxx18/daily-video';
     let runId = null;
     let attempts = 0;
 
-    // Find the run triggered after triggerTime
-    while (!runId && attempts < 12) {
+    while (!runId && attempts < 15) {
       attempts++;
       await new Promise(r => setTimeout(r, 5000));
-      const runsRes = await fetch(
-        `https://api.github.com/repos/${owner}/${repo}/actions/workflows/render.yml/runs?per_page=5`,
-        { headers }
-      );
-      const data = await runsRes.json();
-      const run = (data.workflow_runs || []).find(r =>
-        new Date(r.created_at) >= new Date(triggerTime)
-      );
-      if (run) runId = run.id;
+      try {
+        const res = await fetch(
+          `https://api.github.com/repos/${REPO}/actions/workflows/render.yml/runs?per_page=5`,
+          { headers: { Accept: 'application/vnd.github+json' } }
+        );
+        const data = await res.json();
+        const run = (data.workflow_runs || []).find(r =>
+          new Date(r.created_at) >= new Date(triggerTime)
+        );
+        if (run) runId = run.id;
+      } catch {}
     }
 
     if (!runId) {
-      setStatus('❌ 找不到對應的 Actions run，請到 GitHub Actions 頁面手動查看。', 'error');
+      setStatus('❌ 找不到對應的 Actions run，請到 <a href="https://github.com/sorryxx18/daily-video/actions" target="_blank" style="color:#ff8888">GitHub Actions</a> 頁面查看。', 'error');
       $('submit-btn').disabled = false;
       return;
     }
 
-    // Poll run status
     let elapsed = 0;
+    const REPO = 'sorryxx18/daily-video';
+
     while (true) {
       elapsed += 15;
       await new Promise(r => setTimeout(r, 15000));
-      const runRes = await fetch(
-        `https://api.github.com/repos/${owner}/${repo}/actions/runs/${runId}`,
-        { headers }
-      );
-      const run = await runRes.json();
-      const mins = Math.floor(elapsed / 60);
-      const secs = elapsed % 60;
+      try {
+        const res = await fetch(
+          `https://api.github.com/repos/${REPO}/actions/runs/${runId}`,
+          { headers: { Accept: 'application/vnd.github+json' } }
+        );
+        const run = await res.json();
+        const mins = Math.floor(elapsed / 60);
+        const secs = elapsed % 60;
 
-      if (run.status === 'completed') {
-        if (run.conclusion === 'success') {
-          // Find the release
-          await fetchLatestRelease(owner, repo, headers, runId);
-        } else {
-          setStatus(`❌ Actions 失敗 (${run.conclusion})。<br><a href="${run.html_url}" target="_blank" style="color:#ff8888">查看詳細</a>`, 'error');
-          $('submit-btn').disabled = false;
+        if (run.status === 'completed') {
+          if (run.conclusion === 'success') {
+            await fetchRelease(REPO, runId);
+          } else {
+            setStatus(`❌ Actions 失敗 (${run.conclusion})。<br><a href="${run.html_url}" target="_blank" style="color:#ff8888">查看詳細</a>`, 'error');
+            $('submit-btn').disabled = false;
+          }
+          return;
         }
-        return;
-      }
 
-      setStatus(`⏳ 渲染中... ${mins}分${secs}秒 (<a href="${run.html_url}" target="_blank" style="color:#88cc88">查看進度</a>)`, 'running');
+        setStatus(`⏳ 渲染中... ${mins}分${secs}秒 (<a href="${run.html_url}" target="_blank" style="color:#88cc88">查看進度</a>)`, 'running');
+      } catch {}
     }
   }
 
-  async function fetchLatestRelease(owner, repo, headers, runId) {
-    // Wait a moment for release to be created
+  async function fetchRelease(repo, runId) {
     await new Promise(r => setTimeout(r, 3000));
-    const relRes = await fetch(
-      `https://api.github.com/repos/${owner}/${repo}/releases/latest`,
-      { headers }
-    );
-    const rel = await relRes.json();
-    const asset = (rel.assets || []).find(a => a.name.endsWith('.mp4'));
-    if (asset) {
-      setStatus(
-        `🎉 影片完成！<br><a id="download-link" href="${asset.browser_download_url}" download>⬇️ 下載影片 (${(asset.size / 1024 / 1024).toFixed(1)}MB)</a>`,
-        'done'
+    try {
+      const res = await fetch(
+        `https://api.github.com/repos/${repo}/releases/latest`,
+        { headers: { Accept: 'application/vnd.github+json' } }
       );
-    } else {
-      setStatus(`✅ 完成！<a href="${rel.html_url}" target="_blank" style="color:#aaaaff">前往 Release 下載</a>`, 'done');
+      const rel = await res.json();
+      const asset = (rel.assets || []).find(a => a.name.endsWith('.mp4'));
+      if (asset) {
+        setStatus(
+          `🎉 影片完成！<br><a class="dl-btn" href="${asset.browser_download_url}" download>⬇️ 下載影片 (${(asset.size/1024/1024).toFixed(1)}MB)</a>`,
+          'done'
+        );
+      } else {
+        setStatus(`✅ 完成！<a href="${rel.html_url}" target="_blank" style="color:#aaaaff">前往 Release 下載</a>`, 'done');
+      }
+    } catch {
+      setStatus('✅ 渲染完成！<a href="https://github.com/' + repo + '/releases" target="_blank" style="color:#aaaaff">前往 Releases 下載</a>', 'done');
     }
     $('submit-btn').disabled = false;
   }

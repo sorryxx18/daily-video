@@ -1,7 +1,7 @@
 """
-generate_segments.py — Gemini API generates 5 SEGMENTS from raw text.
-Reads RAW_TEXT, STYLE, GEMINI_API_KEY from env.
-Outputs JSON array to stdout: [[chinese_text, pexels_query], ...]
+generate_segments.py — Gemini generates 5 SEGMENTS + auto-detects category.
+Reads RAW_TEXT, GEMINI_API_KEY from env.
+Outputs JSON to stdout: { "category": "...", "segments": [[text, query], ...] }
 """
 import json
 import os
@@ -10,28 +10,32 @@ import sys
 import google.generativeai as genai
 
 raw_text = os.environ["RAW_TEXT"]
-style = os.environ.get("STYLE", "一般")
 
 genai.configure(api_key=os.environ["GEMINI_API_KEY"])
 model = genai.GenerativeModel("gemini-2.0-flash")
 
-prompt = f"""你是一個短影音腳本編輯，擅長把資訊轉換成適合 TTS 朗讀的口語中文腳本。
+prompt = f"""你是一個短影音腳本編輯，擅長把資訊轉換成口語中文影片腳本。
 
 原始內容：
 {raw_text}
 
-影片風格：{style}
+任務：
+1. 判斷影片類別（從下列選一個最合適的 emoji + 中文標籤）：
+   ⛈️ 天氣快報 / 🤖 AI教學 / 📰 新聞摘要 / 🔥 熱門話題 / 📚 知識分享 / 📹 每日快報
 
-任務：生成恰好 5 個段落，每段是 2-3 句口語中文（自然流暢，適合 TTS 朗讀，不要條列格式），加上一組英文 Pexels 影片搜尋關鍵字（描述該段畫面場景）。
+2. 生成恰好 5 個段落，每段是 2-3 句口語中文（自然流暢，適合 TTS 朗讀），加上一組英文 Pexels 影片搜尋關鍵字（描述該段畫面場景）。
 
-輸出格式（只輸出 JSON，不要其他文字）：
-[
-  ["第一段口語中文，2-3句。", "english pexels search query"],
-  ["第二段口語中文，2-3句。", "english pexels search query"],
-  ["第三段口語中文，2-3句。", "english pexels search query"],
-  ["第四段口語中文，2-3句。", "english pexels search query"],
-  ["第五段口語中文，2-3句。", "english pexels search query"]
-]"""
+輸出格式（只輸出 JSON，不要任何其他文字）：
+{{
+  "category": "⛈️ 天氣快報",
+  "segments": [
+    ["第一段口語中文，2-3句。", "english pexels query"],
+    ["第二段口語中文，2-3句。", "english pexels query"],
+    ["第三段口語中文，2-3句。", "english pexels query"],
+    ["第四段口語中文，2-3句。", "english pexels query"],
+    ["第五段口語中文，2-3句。", "english pexels query"]
+  ]
+}}"""
 
 response = model.generate_content(prompt)
 text = response.text.strip()
@@ -39,12 +43,16 @@ text = response.text.strip()
 # strip code fence if present
 if text.startswith("```"):
     lines = text.split("\n")
-    text = "\n".join(lines[1:-1] if lines[-1] == "```" else lines[1:])
+    text = "\n".join(lines[1:-1] if lines[-1].strip() == "```" else lines[1:])
 text = text.strip()
 
-segments = json.loads(text)
-if len(segments) != 5:
-    print(f"ERROR: expected 5 segments, got {len(segments)}", file=sys.stderr)
+result = json.loads(text)
+
+if "category" not in result or "segments" not in result:
+    print("ERROR: missing category or segments", file=sys.stderr)
+    sys.exit(1)
+if len(result["segments"]) != 5:
+    print(f"ERROR: expected 5 segments, got {len(result['segments'])}", file=sys.stderr)
     sys.exit(1)
 
-print(json.dumps(segments, ensure_ascii=False))
+print(json.dumps(result, ensure_ascii=False))
