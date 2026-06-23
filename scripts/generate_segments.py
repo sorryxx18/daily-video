@@ -13,7 +13,7 @@ import google.generativeai as genai
 raw_text = os.environ["RAW_TEXT"]
 genai.configure(api_key=os.environ["GEMINI_API_KEY"])
 
-MODELS = ["gemini-1.5-flash", "gemini-1.5-flash-8b", "gemini-1.0-pro"]
+MODELS = ["gemini-3-flash-preview", "gemini-2.5-flash-preview-05-20", "gemini-1.5-flash"]
 
 prompt = f"""你是一個短影音腳本編輯，擅長把資訊轉換成口語中文影片腳本。
 
