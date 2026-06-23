@@ -190,9 +190,16 @@
 
         /* 英雄區 */
         .hero {
-            text-align: center;
+            display: grid;
+            grid-template-columns: minmax(0, 0.95fr) minmax(360px, 1.05fr);
+            align-items: center;
+            gap: 3rem;
             margin-bottom: 4rem;
             padding: 2rem 0;
+        }
+
+        .hero-copy {
+            text-align: left;
         }
 
         .hero-badge {
@@ -213,31 +220,215 @@
         }
 
         .hero h1 {
-            font-size: 3rem;
+            font-size: clamp(2.4rem, 5vw, 4.5rem);
             font-weight: 900;
             margin-bottom: 1rem;
-            line-height: 1.2;
+            line-height: 1.08;
+            text-wrap: balance;
         }
 
         .hero h1 .gradient-text {
-            background: linear-gradient(135deg, var(--primary), var(--secondary), var(--accent));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-size: 200% 200%;
-            animation: gradient-shift 3s ease infinite;
-        }
-
-        @keyframes gradient-shift {
-            0%, 100% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
+            color: var(--secondary);
         }
 
         .hero p {
             font-size: 1.1rem;
             color: var(--text-muted);
-            max-width: 500px;
-            margin: 0 auto 2rem;
+            max-width: 520px;
+            margin: 0 0 2rem;
             line-height: 1.7;
+            text-wrap: pretty;
+        }
+
+        .hero-preview {
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 8px;
+            background: linear-gradient(180deg, rgba(37,37,66,0.92), rgba(26,26,46,0.96));
+            padding: 18px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-preview::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(circle at 20% 12%, rgba(34,211,238,0.18), transparent 32%),
+                radial-gradient(circle at 82% 8%, rgba(244,114,182,0.16), transparent 30%);
+            pointer-events: none;
+        }
+
+        .preview-top {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+
+        .preview-title {
+            font-size: 0.95rem;
+            font-weight: 800;
+        }
+
+        .preview-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            border-radius: 999px;
+            padding: 6px 10px;
+            background: rgba(52,211,153,0.14);
+            color: var(--success);
+            font-size: 0.78rem;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        .preview-grid {
+            position: relative;
+            display: grid;
+            grid-template-columns: 1.2fr 0.9fr;
+            grid-template-rows: 132px 132px;
+            gap: 10px;
+        }
+
+        .preview-shot {
+            position: relative;
+            overflow: hidden;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.12);
+            background: var(--bg-elevated);
+        }
+
+        .preview-shot.main {
+            grid-row: 1 / span 2;
+        }
+
+        .preview-visual {
+            width: 100%;
+            height: 100%;
+            display: block;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .preview-visual::before,
+        .preview-visual::after {
+            content: '';
+            position: absolute;
+            pointer-events: none;
+        }
+
+        .preview-visual::before {
+            inset: 0;
+            background:
+                linear-gradient(150deg, rgba(255,255,255,0.18), transparent 35%),
+                radial-gradient(circle at 70% 28%, rgba(255,255,255,0.22), transparent 11%),
+                radial-gradient(circle at 18% 78%, rgba(15,15,26,0.42), transparent 28%);
+        }
+
+        .preview-visual::after {
+            left: 12%;
+            right: 12%;
+            bottom: 16%;
+            height: 18%;
+            border-radius: 999px;
+            background: rgba(15,15,26,0.25);
+            filter: blur(12px);
+        }
+
+        .scene-weather {
+            background:
+                linear-gradient(180deg, rgba(14,165,233,0.18), transparent 58%),
+                linear-gradient(135deg, #17456b 0%, #24345f 45%, #1a1a2e 100%);
+        }
+
+        .scene-weather .scene-object {
+            position: absolute;
+            width: 46%;
+            aspect-ratio: 1;
+            right: 10%;
+            top: 18%;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #f8fafc, #93c5fd);
+            box-shadow: -34px 34px 0 -12px rgba(34,211,238,0.5);
+        }
+
+        .scene-city {
+            background: linear-gradient(160deg, #312e81 0%, #1e1b4b 42%, #0f172a 100%);
+        }
+
+        .scene-city .scene-object {
+            position: absolute;
+            left: 14%;
+            right: 14%;
+            bottom: 16%;
+            height: 48%;
+            background:
+                linear-gradient(90deg, rgba(255,255,255,0.28) 2px, transparent 2px) 0 0 / 18px 100%,
+                linear-gradient(180deg, #6366f1, #111827);
+            clip-path: polygon(0 28%, 14% 28%, 14% 12%, 34% 12%, 34% 35%, 50% 35%, 50% 0, 70% 0, 70% 24%, 100% 24%, 100% 100%, 0 100%);
+        }
+
+        .scene-home {
+            background: linear-gradient(145deg, #14532d 0%, #164e63 48%, #312e81 100%);
+        }
+
+        .scene-home .scene-object {
+            position: absolute;
+            width: 58%;
+            height: 42%;
+            left: 21%;
+            bottom: 18%;
+            border-radius: 8px;
+            background: linear-gradient(180deg, #fde68a, #f97316);
+            clip-path: polygon(50% 0, 100% 38%, 88% 38%, 88% 100%, 12% 100%, 12% 38%, 0 38%);
+        }
+
+        .preview-shot::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, transparent 45%, rgba(15,15,26,0.72));
+        }
+
+        .preview-shot span {
+            position: absolute;
+            left: 10px;
+            bottom: 10px;
+            z-index: 1;
+            font-size: 0.76rem;
+            font-weight: 800;
+            color: #fff;
+            text-shadow: 0 1px 8px rgba(0,0,0,0.75);
+        }
+
+        .preview-flow {
+            position: relative;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .preview-step {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-height: 42px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(15,15,26,0.52);
+            padding: 9px 10px;
+            color: var(--text-muted);
+            font-size: 0.78rem;
+            font-weight: 700;
+        }
+
+        .preview-step i {
+            color: var(--accent);
         }
 
         /* 步驟導航 */
@@ -550,13 +741,27 @@
 
         /* 響應式 */
         @media (max-width: 768px) {
-            .hero h1 { font-size: 2rem; }
+            .hero { grid-template-columns: 1fr; gap: 1.6rem; }
+            .hero-copy { text-align: center; }
+            .hero h1 { font-size: 2.35rem; }
+            .hero p { margin-left: auto; margin-right: auto; }
+            .preview-grid { grid-template-rows: 112px 112px; }
             .stepper { flex-direction: column; gap: 1rem; }
             .stepper-line { display: none; }
             .workspace { padding: 1.5rem; }
             .action-bar { flex-direction: column; gap: 1rem; }
             .nav-actions .btn span,
             .navbar .logo-sub { display: none; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .bg-animation::before,
+            .bg-animation::after,
+            .step.active .step-number,
+            .render-ring,
+            .render-center {
+                animation: none;
+            }
         }
 
         /* 滾動條美化 */
@@ -698,12 +903,38 @@
     <div class="main-container">
         <!-- 英雄區 -->
         <div class="hero">
-            <div class="hero-badge">
-                <i class="fas fa-robot"></i>
-                GitHub Actions 自動渲染
+            <div class="hero-copy">
+                <div class="hero-badge">
+                    <i class="fas fa-robot"></i>
+                    GitHub Actions 自動渲染
+                </div>
+                <h1>文字轉短影音<br><span class="gradient-text">工作台</span></h1>
+                <p>把文字整理成短影音腳本，確認段落和素材後送出渲染，自動生成專業短影音。</p>
             </div>
-            <h1>文字轉短影音<br><span class="gradient-text">工作台</span></h1>
-            <p>把文字整理成短影音腳本，確認段落和素材後送出渲染，自動生成專業短影音。</p>
+            <div class="hero-preview" aria-label="素材配對預覽">
+                <div class="preview-top">
+                    <div class="preview-title">素材配對預覽</div>
+                    <div class="preview-pill"><i class="fas fa-check-circle"></i> 可手動替換</div>
+                </div>
+                <div class="preview-grid">
+                    <div class="preview-shot main">
+                        <div class="preview-visual scene-weather" role="img" aria-label="主要參考素材"><span class="scene-object"></span></div>
+                        <span>照片 01 配對段落 1</span>
+                    </div>
+                    <div class="preview-shot">
+                        <div class="preview-visual scene-city" role="img" aria-label="城市與裝置素材"><span class="scene-object"></span></div>
+                        <span>Pexels 備援</span>
+                    </div>
+                    <div class="preview-shot">
+                        <div class="preview-visual scene-home" role="img" aria-label="生活場景素材"><span class="scene-object"></span></div>
+                        <span>照片 02 已選</span>
+                    </div>
+                </div>
+                <div class="preview-flow">
+                    <div class="preview-step"><i class="fas fa-images"></i> 上傳參考圖</div>
+                    <div class="preview-step"><i class="fas fa-repeat"></i> 不合適再換</div>
+                </div>
+            </div>
         </div>
 
         <!-- 步驟導航 -->
