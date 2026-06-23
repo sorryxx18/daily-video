@@ -170,6 +170,43 @@ export default {
       return new Response(JSON.stringify({ error: "segments_json required" }), { status: 400, headers: { "Content-Type": "application/json", ...CORS } });
     }
 
+    // Clean up old user photos from previous runs before this run
+    const listRes = await fetch(
+      `https://api.github.com/repos/${REPO}/contents/public`,
+      {
+        headers: {
+          Authorization: `Bearer ${env.GITHUB_PAT}`,
+          Accept: "application/vnd.github+json",
+          "User-Agent": "daily-video-worker/2.0",
+        },
+      }
+    );
+    if (listRes.ok) {
+      const files = await listRes.json();
+      const oldPhotos = Array.isArray(files)
+        ? files.filter(f => /^user_bg_\d+\./.test(f.name))
+        : [];
+      for (const file of oldPhotos) {
+        await fetch(
+          `https://api.github.com/repos/${REPO}/contents/${file.path}`,
+          {
+            method: "DELETE",
+            headers: {
+              Authorization: `Bearer ${env.GITHUB_PAT}`,
+              Accept: "application/vnd.github+json",
+              "Content-Type": "application/json",
+              "User-Agent": "daily-video-worker/2.0",
+            },
+            body: JSON.stringify({
+              message: `cleanup: remove old user photos (${new Date().toISOString()})`,
+              sha: file.sha,
+              committer: { name: "daily-video-worker", email: "worker@daily-video" },
+            }),
+          }
+        );
+      }
+    }
+
     // Commit user photos to repo before triggering Actions
     if (photos.length > 0) {
       for (const photo of photos) {
