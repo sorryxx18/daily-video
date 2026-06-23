@@ -7,6 +7,7 @@ import asyncio
 import json
 import os
 import shutil
+import glob
 import subprocess
 import sys
 from pathlib import Path
@@ -75,11 +76,19 @@ async def main() -> None:
         })
         current_time += duration
 
-        print(f"          Pexels [{query[:40]}]...")
-        bg_tmp = str(TMP / f"bg_{i:02d}.mp4")
-        download_pexels_video(query, bg_tmp)
-        bg_name = f"bg_{i:02d}.mp4"
-        shutil.copy(bg_tmp, PUBLIC_DIR / bg_name)
+        user_photos = glob.glob(str(PUBLIC_DIR / f"user_bg_{i:02d}.*"))
+        image_exts = {'.jpg', '.jpeg', '.png', '.webp'}
+        user_photo = next((p for p in user_photos if os.path.splitext(p)[1].lower() in image_exts), None)
+        if user_photo:
+            bg_ext = os.path.splitext(user_photo)[1].lower()
+            bg_name = f"user_bg_{i:02d}{bg_ext}"
+            print(f"          📷 使用用戶照片: {bg_name}")
+        else:
+            print(f"          Pexels [{query[:40]}]...")
+            bg_tmp = str(TMP / f"bg_{i:02d}.mp4")
+            download_pexels_video(query, bg_tmp)
+            bg_name = f"bg_{i:02d}.mp4"
+            shutil.copy(bg_tmp, PUBLIC_DIR / bg_name)
         bg_names.append(bg_name)
         print(f"          ✓ {duration:.1f}s  累計: {current_time:.1f}s")
 

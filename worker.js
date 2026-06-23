@@ -114,8 +114,63 @@ export default {
     // ── / — trigger render ────────────────────────────────────────────────────
     const segmentsJson = body.segments_json;
     const category = body.category || "📹 每日快報";
+    const photos = body.photos || [];
     if (!segmentsJson) {
       return new Response(JSON.stringify({ error: "segments_json required" }), { status: 400, headers: { "Content-Type": "application/json", ...CORS } });
+    }
+
+    // Commit user photos to repo before triggering Actions
+    if (photos.length > 0) {
+      for (const photo of photos) {
+        const { index, data, ext } = photo;
+        const path = `public/user_bg_${String(index).padStart(2, "0")}.${ext}`;
+        const base64 = data.includes(",") ? data.split(",")[1] : data;
+
+        // GET existing sha to avoid 422 conflict on update
+        let sha;
+        const getRes = await fetch(
+          `https://api.github.com/repos/${REPO}/contents/${path}`,
+          {
+            headers: {
+              Authorization: `Bearer ${env.GITHUB_PAT}`,
+              Accept: "application/vnd.github+json",
+              "User-Agent": "daily-video-worker/2.0",
+            },
+          }
+        );
+        if (getRes.ok) {
+          const existing = await getRes.json();
+          sha = existing.sha;
+        }
+
+        const putBody = {
+          message: `upload user photo seg ${index} (${new Date().toISOString()})`,
+          content: base64,
+          committer: { name: "daily-video-worker", email: "worker@daily-video" },
+        };
+        if (sha) putBody.sha = sha;
+
+        const putRes = await fetch(
+          `https://api.github.com/repos/${REPO}/contents/${path}`,
+          {
+            method: "PUT",
+            headers: {
+              Authorization: `Bearer ${env.GITHUB_PAT}`,
+              Accept: "application/vnd.github+json",
+              "Content-Type": "application/json",
+              "User-Agent": "daily-video-worker/2.0",
+            },
+            body: JSON.stringify(putBody),
+          }
+        );
+
+        if (!putRes.ok) {
+          const err = await putRes.text();
+          return new Response(JSON.stringify({ error: `Failed to commit photo ${index}: ${err}` }), {
+            status: 500, headers: { "Content-Type": "application/json", ...CORS },
+          });
+        }
+      }
     }
 
     const triggerTime = new Date().toISOString();

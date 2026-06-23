@@ -190,6 +190,34 @@
 
     /* Hidden */
     .hidden { display: none !important; }
+
+    /* Photo upload */
+    .photo-upload-area { margin-top: 10px; }
+    .photo-upload-label {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 12px;
+      border: 1.5px dashed var(--border);
+      border-radius: 7px;
+      font-size: 12px; font-weight: 500; color: var(--muted);
+      cursor: pointer;
+      background: var(--surface);
+      transition: border-color .15s, color .15s;
+    }
+    .photo-upload-label:hover { border-color: var(--accent); color: var(--accent); }
+    .photo-preview {
+      display: flex; align-items: center; gap: 8px; margin-top: 6px;
+    }
+    .photo-preview img {
+      width: 56px; height: 56px; object-fit: cover;
+      border-radius: 6px; border: 1px solid var(--border);
+    }
+    .photo-clear-btn {
+      width: 22px; height: 22px; border-radius: 50%;
+      border: none; background: var(--error); color: #fff;
+      font-size: 11px; cursor: pointer; display: flex;
+      align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
   </style>
 </head>
 <body>
@@ -362,6 +390,7 @@
     $('category-badge').textContent = category;
     window._category = category;
     window._segments = segments;
+    window._userPhotos = {};
 
     const list = $('segments-list');
     list.innerHTML = '';
@@ -376,6 +405,14 @@
         <div class="segment-query">
           <div class="query-label">Pexels 搜尋詞</div>
           <input type="text" id="seg-query-${i}" value="${seg[1]}">
+        </div>
+        <div class="photo-upload-area">
+          <input type="file" id="photo-input-${i}" accept="image/*" style="display:none" onchange="handlePhotoSelect(${i}, this)">
+          <label class="photo-upload-label" for="photo-input-${i}">📷 上傳照片（選填）</label>
+          <div id="photo-preview-${i}" class="photo-preview hidden">
+            <img id="photo-thumb-${i}" src="" alt="預覽">
+            <button type="button" class="photo-clear-btn" onclick="clearPhoto(${i})">✕</button>
+          </div>
         </div>`;
       list.appendChild(div);
     });
@@ -384,6 +421,21 @@
   function backToStep1() {
     $('generate-btn').disabled = false;
     setStep(1);
+  }
+
+  function handlePhotoSelect(i, input) {
+    const file = input.files[0];
+    if (!file) return;
+    window._userPhotos[i] = file;
+    const url = URL.createObjectURL(file);
+    $(`photo-thumb-${i}`).src = url;
+    $(`photo-preview-${i}`).classList.remove('hidden');
+  }
+
+  function clearPhoto(i) {
+    delete window._userPhotos[i];
+    $(`photo-input-${i}`).value = '';
+    $(`photo-preview-${i}`).classList.add('hidden');
   }
 
   // ── Step 2: render ─────────────────────────────────────────────────────────
@@ -400,7 +452,19 @@
     }
 
     $('render-btn').disabled = true;
-    showStatus('step2-status', '⏳ 觸發渲染中...', 'info');
+    showStatus('step2-status', '⏳ 上傳照片並觸發渲染中...', 'info');
+
+    // Encode user photos as base64
+    const photos = [];
+    for (const [idxStr, file] of Object.entries(window._userPhotos || {})) {
+      const data = await new Promise(resolve => {
+        const reader = new FileReader();
+        reader.onload = e => resolve(e.target.result);
+        reader.readAsDataURL(file);
+      });
+      const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+      photos.push({ index: parseInt(idxStr), data, ext });
+    }
 
     let triggerTime;
     try {
@@ -410,6 +474,7 @@
         body: JSON.stringify({
           segments_json: JSON.stringify(segments),
           category,
+          photos: photos.length > 0 ? photos : undefined,
         }),
       });
       const data = await res.json();
