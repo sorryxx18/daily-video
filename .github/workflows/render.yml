@@ -23,6 +23,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Restore used video IDs cache
+        uses: actions/cache@v4
+        with:
+          path: scripts/used_video_ids.json
+          key: used-video-ids-${{ github.run_number }}
+          restore-keys: used-video-ids-
+
       - name: Install system deps
         run: |
           sudo apt-get update -qq
