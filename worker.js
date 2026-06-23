@@ -111,17 +111,23 @@ export default {
         })),
       ];
 
-      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${env.GEMINI_API_KEY}`;
-      const geminiRes = await fetch(geminiUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ contents: [{ parts }] }),
-      });
-      const geminiData = await geminiRes.json();
-      const text = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (!geminiRes.ok || !text) {
+      const VISION_MODELS = ["gemini-3.5-flash", "gemini-1.5-flash"];
+      let text, visionError;
+      for (const vModel of VISION_MODELS) {
+        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${vModel}:generateContent?key=${env.GEMINI_API_KEY}`;
+        const geminiRes = await fetch(geminiUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ contents: [{ parts }] }),
+        });
+        const geminiData = await geminiRes.json();
+        text = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (geminiRes.ok && text) break;
+        visionError = geminiData.error?.message || `${vModel} failed`;
+      }
+      if (!text) {
         return new Response(
-          JSON.stringify({ error: geminiData.error?.message || "Gemini Vision failed" }),
+          JSON.stringify({ error: visionError || "Gemini Vision failed" }),
           { status: 500, headers: { "Content-Type": "application/json", ...CORS } }
         );
       }
