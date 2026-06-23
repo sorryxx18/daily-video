@@ -57,10 +57,15 @@ jobs:
           JAMENDO_CLIENT_ID: ${{ secrets.JAMENDO_CLIENT_ID }}
         run: python scripts/render.py
 
+      - name: Rename video
+        run: |
+          DATE=$(date +%Y-%m-%d)
+          mv output/video-compressed.mp4 "output/daily-video-${DATE}-${{ github.run_number }}.mp4"
+
       - name: Create release with video
         uses: softprops/action-gh-release@v2
         with:
           tag_name: video-${{ github.run_number }}
           name: "影片 #${{ github.run_number }}"
-          files: output/video-compressed.mp4
+          files: output/daily-video-*.mp4
           token: ${{ secrets.GITHUB_TOKEN }}

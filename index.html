@@ -656,7 +656,7 @@
       const link = $('download-link');
       if (asset) {
         link.href = asset.browser_download_url;
-        link.textContent = `⬇️ 下載影片 (${(asset.size/1024/1024).toFixed(1)}MB)`;
+        link.textContent = `⬇️ ${asset.name} (${(asset.size/1024/1024).toFixed(1)}MB)`;
       } else {
         link.href = rel.html_url;
         link.textContent = '⬇️ 前往 Release 下載';
