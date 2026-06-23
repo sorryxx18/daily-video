@@ -1,0 +1,80 @@
+name: Render Video
+
+on:
+  workflow_dispatch:
+    inputs:
+      raw_text:
+        description: '原始文字內容（天氣報告、課程筆記等）'
+        required: true
+        type: string
+      style:
+        description: '影片風格'
+        required: false
+        default: '一般'
+        type: choice
+        options:
+          - 天氣快報
+          - AI教學
+          - 新聞摘要
+          - 一般
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install system deps
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y ffmpeg fonts-noto-cjk
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Python deps
+        run: pip install edge-tts requests google-generativeai
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install Node deps
+        run: bun install
+
+      - name: Generate segments with Gemini
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          RAW_TEXT: ${{ inputs.raw_text }}
+          STYLE: ${{ inputs.style }}
+        run: |
+          python scripts/generate_segments.py > /tmp/segments.json
+          echo "SEGMENTS_JSON=$(cat /tmp/segments.json)" >> $GITHUB_ENV
+
+      - name: Set category label
+        run: |
+          case "${{ inputs.style }}" in
+            天氣快報) echo "CATEGORY=⛈️ 天氣快報" >> $GITHUB_ENV ;;
+            AI教學)   echo "CATEGORY=🤖 AI教學" >> $GITHUB_ENV ;;
+            新聞摘要) echo "CATEGORY=📰 新聞摘要" >> $GITHUB_ENV ;;
+            *)        echo "CATEGORY=📹 每日快報" >> $GITHUB_ENV ;;
+          esac
+
+      - name: Render video
+        env:
+          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+        run: python scripts/render.py
+
+      - name: Create release with video
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: video-${{ github.run_number }}
+          name: "影片 #${{ github.run_number }} — ${{ inputs.style }}"
+          body: |
+            風格：${{ inputs.style }}
+            產生時間：${{ github.event.head_commit.timestamp || 'manual trigger' }}
+          files: output/video-compressed.mp4
+          token: ${{ secrets.GITHUB_TOKEN }}
