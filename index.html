@@ -478,7 +478,11 @@
     ]);
 
     $('assign-btn').disabled = true;
-    $('assign-btn').textContent = '🤖 AI 配對中...';
+    let assignSecs = 0;
+    const assignTimer = setInterval(() => {
+      assignSecs++;
+      $('assign-btn').textContent = `🤖 AI 配對中... ${assignSecs} 秒`;
+    }, 1000);
 
     try {
       const res = await fetch(workerUrl + '/assign', {
@@ -500,6 +504,7 @@
     } catch (e) {
       showStatus('step2-status', `❌ 連線失敗：${e.message}`, 'error');
     } finally {
+      clearInterval(assignTimer);
       $('assign-btn').disabled = false;
       $('assign-btn').textContent = '🤖 AI 自動配對照片';
     }
@@ -574,13 +579,25 @@
     }
 
     setStep(3);
-    await new Promise(r => setTimeout(r, 8000));
     pollRun(triggerTime);
   }
 
   // ── Step 3: poll ───────────────────────────────────────────────────────────
   async function pollRun(triggerTime) {
-    let runId = null, attempts = 0;
+    let runId = null, attempts = 0, elapsed = 0, runUrl = '';
+
+    // Live elapsed timer — updates every second throughout
+    const elapsedTimer = setInterval(() => {
+      elapsed++;
+      const m = Math.floor(elapsed / 60), s = String(elapsed % 60).padStart(2, '0');
+      const timeStr = m > 0 ? `${m}分${s}秒` : `${elapsed}秒`;
+      if (!runId) {
+        showStatus('step3-status', `⏳ 等待 Actions 啟動... ${timeStr}`, 'running');
+      } else {
+        const link = runUrl ? ` · <a href="${runUrl}" target="_blank">查看進度</a>` : '';
+        showStatus('step3-status', `⏳ 渲染中... ${timeStr}（約 10 分鐘）${link}`, 'running');
+      }
+    }, 1000);
 
     while (!runId && attempts < 15) {
       attempts++;
@@ -592,18 +609,17 @@
         );
         const data = await res.json();
         const run = (data.workflow_runs || []).find(r => new Date(r.created_at) >= new Date(triggerTime));
-        if (run) runId = run.id;
+        if (run) { runId = run.id; runUrl = run.html_url; }
       } catch {}
     }
 
     if (!runId) {
+      clearInterval(elapsedTimer);
       showStatus('step3-status', '❌ 找不到 Actions run。<a href="https://github.com/' + REPO + '/actions" target="_blank">手動查看</a>', 'error');
       return;
     }
 
-    let elapsed = 0;
     while (true) {
-      elapsed += 15;
       await new Promise(r => setTimeout(r, 15000));
       try {
         const res = await fetch(
@@ -611,9 +627,9 @@
           { headers: { Accept: 'application/vnd.github+json' } }
         );
         const run = await res.json();
-        const m = Math.floor(elapsed / 60), s = elapsed % 60;
-
+        runUrl = run.html_url;
         if (run.status === 'completed') {
+          clearInterval(elapsedTimer);
           if (run.conclusion === 'success') {
             await fetchRelease();
           } else {
@@ -621,7 +637,6 @@
           }
           return;
         }
-        showStatus('step3-status', `⏳ 渲染中... ${m}分${s}秒 · <a href="${run.html_url}" target="_blank">查看進度</a>`, 'running');
       } catch {}
     }
   }
