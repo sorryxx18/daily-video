@@ -8,6 +8,7 @@ import json
 import os
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 
 import edge_tts
@@ -114,6 +115,5 @@ async def main() -> None:
     print(f"✅ 壓縮後: {OUTPUT_COMPRESSED} ({OUTPUT_COMPRESSED.stat().st_size // 1024 // 1024}MB)")
 
 
-import sys
 if __name__ == "__main__":
     asyncio.run(main())
