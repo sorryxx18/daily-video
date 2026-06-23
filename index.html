@@ -260,15 +260,6 @@
       <div class="status" id="step1-status"></div>
     </div>
 
-    <details>
-      <summary>⚙️ 設定（首次使用需填寫）</summary>
-      <div class="settings-body">
-        <label>Worker URL</label>
-        <input type="text" id="worker-url" placeholder="https://daily-video-trigger.你的帳號.workers.dev">
-        <p style="font-size:12px;color:var(--muted);margin-top:6px">設定一次，存在瀏覽器 localStorage。</p>
-        <button class="btn btn-secondary" style="margin-top:10px" onclick="saveSettings()">儲存設定</button>
-      </div>
-    </details>
   </div>
 
   <!-- Step 2: Script editor -->
@@ -310,18 +301,6 @@
   const $ = id => document.getElementById(id);
   const REPO = 'sorryxx18/daily-video';
 
-  // Restore settings
-  window.onload = () => {
-    const url = localStorage.getItem('dv_worker_url');
-    if (url) $('worker-url').value = url;
-  };
-
-  function saveSettings() {
-    const url = $('worker-url').value.trim();
-    if (!url) return;
-    localStorage.setItem('dv_worker_url', url);
-    showStatus('step1-status', '✅ 設定已儲存', 'done');
-  }
 
   function showStatus(id, msg, type) {
     const el = $(id);
@@ -345,7 +324,7 @@
   }
 
   function getWorkerUrl() {
-    return ($('worker-url').value || localStorage.getItem('dv_worker_url') || '').trim();
+    return 'https://daily-video-trigger.sorryxx18.workers.dev';
   }
 
   // ── Step 1: generate script ────────────────────────────────────────────────
@@ -354,11 +333,6 @@
     if (!rawText) return showStatus('step1-status', '請貼上原始文字內容。', 'error');
 
     const workerUrl = getWorkerUrl();
-    if (!workerUrl) {
-      document.querySelector('details').open = true;
-      return showStatus('step1-status', '請先在下方設定填入 Worker URL。', 'error');
-    }
-
     $('generate-btn').disabled = true;
     showStatus('step1-status', '✨ AI 生成腳本中...', 'info');
 
