@@ -8,69 +8,196 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg: #fafafa;
-      --surface: #ffffff;
-      --border: #e5e7eb;
-      --border-focus: #6366f1;
-      --text: #111827;
-      --muted: #6b7280;
-      --accent: #6366f1;
-      --accent-hover: #4f46e5;
-      --accent-light: #eef2ff;
-      --success: #059669;
-      --success-light: #ecfdf5;
-      --error: #dc2626;
-      --error-light: #fef2f2;
-      --warning: #d97706;
-      --warning-light: #fffbeb;
-      --radius: 10px;
-      --shadow: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.04);
-      --shadow-md: 0 4px 16px rgba(0,0,0,.08);
+      --bg: oklch(95.5% 0.012 255);
+      --surface: oklch(100% 0 0);
+      --surface-subtle: oklch(98.3% 0.008 255);
+      --surface-raised: oklch(99.4% 0.004 255);
+      --ink: oklch(19% 0.045 255);
+      --ink-2: oklch(25% 0.055 255);
+      --border: oklch(89% 0.014 255);
+      --border-strong: oklch(80% 0.024 255);
+      --border-focus: oklch(54% 0.18 258);
+      --text: oklch(20% 0.035 255);
+      --muted: oklch(43% 0.03 255);
+      --muted-soft: oklch(55% 0.026 255);
+      --accent: oklch(53% 0.2 258);
+      --accent-hover: oklch(47% 0.22 258);
+      --accent-light: oklch(93% 0.04 258);
+      --success: oklch(45% 0.13 158);
+      --success-light: oklch(94% 0.04 158);
+      --error: oklch(52% 0.19 28);
+      --error-light: oklch(95% 0.035 28);
+      --warning: oklch(52% 0.13 75);
+      --warning-light: oklch(95% 0.045 75);
+      --radius: 12px;
+      --radius-sm: 8px;
+      --shadow: 0 1px 2px rgba(15, 23, 42, .06);
+      --shadow-md: 0 8px 22px rgba(15, 23, 42, .08);
     }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
-      background: var(--bg);
+      font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+      background:
+        linear-gradient(90deg, rgba(25, 39, 76, .08) 1px, transparent 1px),
+        linear-gradient(180deg, rgba(25, 39, 76, .08) 1px, transparent 1px),
+        radial-gradient(circle at top left, oklch(80% 0.12 258 / .34), transparent 30rem),
+        linear-gradient(180deg, oklch(99% 0.004 255), var(--bg) 24rem);
+      background-size: 48px 48px, 48px 48px, auto, auto;
       color: var(--text);
       min-height: 100vh;
-      padding: 40px 16px 80px;
+      padding: 32px 18px 72px;
     }
 
-    .container { max-width: 680px; margin: 0 auto; }
+    .container { max-width: 1080px; margin: 0 auto; }
+
+    .app-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 18px;
+      padding: 10px 12px;
+      background: var(--ink);
+      color: #fff;
+      border-radius: 14px;
+      box-shadow: var(--shadow-md);
+    }
+
+    .brand-lockup {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      font-size: 14px;
+      font-weight: 760;
+    }
+
+    .brand-mark {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      background: var(--accent);
+      color: #fff;
+      font-size: 13px;
+      letter-spacing: .02em;
+    }
+
+    .app-status {
+      color: oklch(88% 0.035 255);
+      font-size: 13px;
+      white-space: nowrap;
+    }
 
     /* Header */
-    .header { text-align: center; margin-bottom: 40px; }
-    .header h1 { font-size: 28px; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 6px; }
-    .header p { font-size: 15px; color: var(--muted); }
+    .header {
+      display: flex;
+      align-items: stretch;
+      justify-content: space-between;
+      gap: 24px;
+      margin-bottom: 20px;
+      padding: 28px;
+      color: #fff;
+      background:
+        radial-gradient(circle at right top, oklch(64% 0.18 258 / .34), transparent 24rem),
+        linear-gradient(135deg, var(--ink), var(--ink-2));
+      border-radius: 18px;
+      overflow: hidden;
+    }
+    .header h1 {
+      font-size: 32px;
+      line-height: 1.15;
+      font-weight: 780;
+      letter-spacing: -0.02em;
+      margin-bottom: 8px;
+      text-wrap: balance;
+    }
+    .header p { font-size: 15px; color: oklch(88% 0.035 255); max-width: 36rem; line-height: 1.7; }
+
+    .hero-kicker {
+      display: inline-flex;
+      align-items: center;
+      margin-bottom: 14px;
+      padding: 5px 9px;
+      border: 1px solid rgba(255,255,255,.18);
+      border-radius: 999px;
+      color: oklch(90% 0.04 255);
+      font-size: 12px;
+      font-weight: 650;
+    }
+
+    .hero-panel {
+      align-self: stretch;
+      width: 260px;
+      padding: 16px;
+      border: 1px solid rgba(255,255,255,.15);
+      border-radius: 14px;
+      background: rgba(255,255,255,.08);
+    }
+
+    .hero-panel-title {
+      color: oklch(88% 0.035 255);
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+
+    .hero-stack {
+      display: grid;
+      gap: 8px;
+    }
+
+    .hero-line {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 650;
+    }
+
+    .hero-line span:last-child { color: oklch(86% 0.13 158); }
 
     /* Step indicator */
     .steps {
-      display: flex;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr auto 1fr;
       align-items: center;
-      gap: 0;
-      margin-bottom: 32px;
+      gap: 8px;
+      margin-bottom: 20px;
+      background: rgba(255,255,255,.9);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 10px;
     }
     .step {
       display: flex;
       align-items: center;
       gap: 8px;
-      flex: 1;
       font-size: 13px;
+      font-weight: 650;
       color: var(--muted);
+      min-width: 0;
+      padding: 8px 10px;
+      border-radius: var(--radius-sm);
     }
-    .step.active { color: var(--accent); }
-    .step.done { color: var(--success); }
+    .step.active { color: var(--accent); background: var(--accent-light); }
+    .step.done { color: var(--success); background: var(--success-light); }
     .step-num {
       width: 24px; height: 24px;
       border-radius: 50%;
-      border: 2px solid var(--border);
+      border: 1px solid var(--border-strong);
       display: flex; align-items: center; justify-content: center;
       font-size: 11px; font-weight: 700;
       flex-shrink: 0;
+      background: var(--surface);
     }
+    .step span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .step.active .step-num { border-color: var(--accent); background: var(--accent); color: #fff; }
     .step.done .step-num { border-color: var(--success); background: var(--success); color: #fff; }
-    .step-divider { flex: 0 0 24px; height: 1px; background: var(--border); margin: 0 4px; }
+    .step-divider { width: 24px; height: 1px; background: var(--border-strong); }
 
     /* Card */
     .card {
@@ -78,48 +205,50 @@
       border: 1px solid var(--border);
       border-radius: var(--radius);
       padding: 24px;
-      box-shadow: var(--shadow);
       margin-bottom: 16px;
+      box-shadow: var(--shadow);
     }
-    .card-title { font-size: 15px; font-weight: 600; margin-bottom: 16px; }
+    .card-title { font-size: 16px; font-weight: 720; margin-bottom: 16px; letter-spacing: -0.01em; }
 
     /* Form elements */
     label { display: block; font-size: 13px; font-weight: 500; color: var(--muted); margin-bottom: 6px; }
     textarea, input[type="text"] {
       width: 100%;
-      background: var(--bg);
+      background: var(--surface-subtle);
       border: 1px solid var(--border);
-      border-radius: 8px;
+      border-radius: var(--radius-sm);
       color: var(--text);
-      padding: 10px 12px;
+      padding: 12px 13px;
       font-size: 14px;
       font-family: inherit;
       outline: none;
-      transition: border-color .15s, box-shadow .15s;
+      transition: border-color .15s, box-shadow .15s, background .15s;
       resize: none;
     }
     textarea:focus, input[type="text"]:focus {
       border-color: var(--border-focus);
-      box-shadow: 0 0 0 3px rgba(99,102,241,.1);
+      background: var(--surface);
+      box-shadow: 0 0 0 3px color-mix(in oklch, var(--accent) 16%, transparent);
     }
     textarea { min-height: 160px; line-height: 1.6; }
 
     /* Buttons */
     .btn {
       display: inline-flex; align-items: center; justify-content: center;
-      gap: 6px;
-      padding: 10px 20px;
-      border-radius: 8px;
+      gap: 8px;
+      min-height: 42px;
+      padding: 10px 18px;
+      border-radius: var(--radius-sm);
       font-size: 14px; font-weight: 600;
       border: none; cursor: pointer;
-      transition: background .15s, opacity .15s, transform .1s;
+      transition: background .15s, color .15s, opacity .15s, transform .1s;
     }
     .btn:active:not(:disabled) { transform: scale(0.98); }
     .btn:disabled { opacity: 0.45; cursor: not-allowed; }
-    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary { background: var(--accent); color: #fff; box-shadow: var(--shadow); }
     .btn-primary:hover:not(:disabled) { background: var(--accent-hover); }
-    .btn-secondary { background: var(--accent-light); color: var(--accent); }
-    .btn-secondary:hover:not(:disabled) { background: #e0e7ff; }
+    .btn-secondary { background: var(--surface); color: var(--text); border: 1px solid var(--border-strong); }
+    .btn-secondary:hover:not(:disabled) { background: var(--surface-subtle); }
     .btn-success { background: var(--success); color: #fff; }
     .btn-success:hover:not(:disabled) { background: #047857; }
     .btn-full { width: 100%; }
@@ -127,19 +256,20 @@
     /* Segment editor */
     .segments-list { display: flex; flex-direction: column; gap: 12px; }
     .segment-card {
-      background: var(--bg);
+      background: var(--surface-raised);
       border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 14px;
+      border-radius: var(--radius);
+      padding: 16px;
     }
     .segment-header {
       display: flex; align-items: center; justify-content: space-between;
       margin-bottom: 8px;
     }
     .segment-num {
-      font-size: 11px; font-weight: 700; color: var(--muted);
-      background: var(--border);
-      padding: 2px 8px; border-radius: 20px;
+      font-size: 12px; font-weight: 720; color: var(--text);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 4px 9px; border-radius: 999px;
     }
     .segment-card textarea { min-height: 72px; font-size: 13px; background: #fff; }
     .segment-query { margin-top: 8px; }
@@ -150,7 +280,7 @@
 
     /* Status */
     .status {
-      padding: 12px 16px; border-radius: 8px;
+      padding: 12px 14px; border-radius: var(--radius-sm);
       font-size: 14px; line-height: 1.6;
       display: none;
       margin-top: 12px;
@@ -175,7 +305,7 @@
     .video-gallery { margin-top: 32px; }
     .video-item {
       display: flex; align-items: center; justify-content: space-between;
-      padding: 10px 0; border-bottom: 1px solid var(--border);
+      padding: 12px 0; border-bottom: 1px solid var(--border);
       gap: 12px;
     }
     .video-item:last-child { border-bottom: none; }
@@ -185,17 +315,18 @@
     .video-item-dl {
       flex-shrink: 0;
       display: inline-flex; align-items: center; gap: 6px;
-      padding: 6px 12px; background: var(--success); color: #fff;
-      border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: 600;
+      padding: 7px 12px; background: var(--surface); color: var(--success);
+      border: 1px solid color-mix(in oklch, var(--success) 35%, var(--border));
+      border-radius: 999px; text-decoration: none; font-size: 13px; font-weight: 650;
       transition: background .15s;
     }
-    .video-item-dl:hover { background: #047857; }
+    .video-item-dl:hover { background: var(--success-light); }
 
     /* Category badge */
     .category-badge {
       display: inline-block;
       background: var(--accent-light); color: var(--accent);
-      padding: 3px 10px; border-radius: 20px;
+      padding: 4px 10px; border-radius: 999px;
       font-size: 13px; font-weight: 600;
     }
 
@@ -213,9 +344,10 @@
 
     /* Batch photo upload */
     .batch-upload-zone {
-      border: 2px dashed var(--border); border-radius: 8px;
-      padding: 16px; text-align: center; cursor: pointer;
+      border: 1px dashed var(--border-strong); border-radius: var(--radius);
+      padding: 18px; text-align: center; cursor: pointer;
       margin-bottom: 12px; transition: border-color .15s, background .15s;
+      background: var(--surface-subtle);
     }
     .batch-upload-zone:hover { border-color: var(--accent); background: var(--accent-light); }
     .batch-upload-label { cursor: pointer; display: block; }
@@ -254,15 +386,89 @@
       font-size: 11px; color: var(--error); background: none;
       border: none; cursor: pointer; padding: 0; margin-left: 4px;
     }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 320px;
+      align-items: start;
+      gap: 18px;
+    }
+
+    .main-panel { min-width: 0; }
+
+    .side-panel {
+      position: sticky;
+      top: 20px;
+    }
+
+    .quick-note {
+      background:
+        linear-gradient(180deg, color-mix(in oklch, var(--accent-light) 75%, #fff), #fff);
+      border: 1px solid color-mix(in oklch, var(--accent) 20%, var(--border));
+      border-radius: 14px;
+      padding: 18px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.65;
+      margin-bottom: 16px;
+    }
+
+    .quick-note strong {
+      display: block;
+      color: var(--text);
+      font-size: 14px;
+      margin-bottom: 6px;
+    }
+
+    @media (max-width: 820px) {
+      body { padding-top: 22px; }
+      .app-bar { border-radius: 12px; }
+      .app-status { display: none; }
+      .header { display: block; margin-bottom: 20px; padding: 22px; }
+      .header h1 { font-size: 28px; }
+      .hero-panel { width: 100%; margin-top: 18px; }
+      .workspace { display: block; }
+      .side-panel { position: static; }
+      .steps { grid-template-columns: 1fr; gap: 6px; }
+      .step-divider { display: none; }
+      .step span { white-space: normal; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: .01ms !important;
+      }
+    }
   </style>
 </head>
 <body>
 <div class="container">
+  <div class="app-bar">
+    <div class="brand-lockup">
+      <span class="brand-mark">DV</span>
+      <span>Daily Video Studio</span>
+    </div>
+    <div class="app-status">GitHub Actions Renderer</div>
+  </div>
 
   <!-- Header -->
   <div class="header">
-    <h1>🎬 廢片生成所</h1>
-    <p>貼上任何文字，AI 生成腳本，一鍵渲染影片</p>
+    <div>
+      <div class="hero-kicker">文字轉短影音工作台</div>
+      <h1>廢片生成所</h1>
+      <p>把文字整理成短影音腳本，確認段落和素材後送出渲染。</p>
+    </div>
+    <div class="hero-panel" aria-hidden="true">
+      <div class="hero-panel-title">目前流程</div>
+      <div class="hero-stack">
+        <div class="hero-line"><span>腳本</span><span>5 段</span></div>
+        <div class="hero-line"><span>素材</span><span>照片 / Pexels</span></div>
+        <div class="hero-line"><span>輸出</span><span>MP4</span></div>
+      </div>
+    </div>
   </div>
 
   <!-- Steps -->
@@ -283,69 +489,80 @@
     </div>
   </div>
 
-  <!-- Step 1: Input -->
-  <div id="step1">
-    <div class="card">
-      <div class="card-title">原始內容</div>
-      <textarea id="raw-text" placeholder="貼上天氣報告、課程筆記、新聞摘要…任何文字都可以。"></textarea>
-      <div style="margin-top:12px">
-        <button class="btn btn-primary btn-full" id="generate-btn" onclick="generateScript()">
-          ✨ 生成腳本
-        </button>
-      </div>
-      <div class="status" id="step1-status"></div>
-    </div>
+  <div class="workspace">
+    <main class="main-panel">
+      <!-- Step 1: Input -->
+      <div id="step1">
+        <div class="card">
+          <div class="card-title">原始內容</div>
+          <textarea id="raw-text" placeholder="貼上天氣報告、課程筆記、新聞摘要，或任何想轉成影片的文字。"></textarea>
+          <div style="margin-top:14px">
+            <button class="btn btn-primary btn-full" id="generate-btn" onclick="generateScript()">
+              生成腳本
+            </button>
+          </div>
+          <div class="status" id="step1-status"></div>
+        </div>
 
-  </div>
-
-  <!-- Step 2: Script editor -->
-  <div id="step2" class="hidden">
-    <div class="card">
-      <div class="card-title" style="display:flex;align-items:center;justify-content:space-between">
-        <span>確認腳本</span>
-        <span class="category-badge" id="category-badge"></span>
       </div>
-      <!-- Batch photo upload -->
-      <div class="batch-upload-zone" onclick="$('batch-photo-input').click()">
-        <label class="batch-upload-label">
-          <span>📷 上傳照片（可多選）</span>
-          <span class="batch-hint">AI 自動配對到最合適的段落</span>
-        </label>
-      </div>
-      <input type="file" id="batch-photo-input" accept="image/*" multiple style="display:none" onchange="handleBatchUpload(this)">
-      <div id="photo-grid" class="photo-grid hidden"></div>
-      <button class="btn btn-secondary" id="assign-btn" onclick="assignPhotos()" style="display:none;margin-bottom:12px;width:100%">🤖 AI 自動配對照片</button>
 
-      <div class="segments-list" id="segments-list"></div>
-      <div class="divider"></div>
-      <div style="display:flex;gap:10px">
-        <button class="btn btn-secondary" onclick="backToStep1()" style="flex:1">← 重新輸入</button>
-        <button class="btn btn-success" onclick="renderVideo()" style="flex:2" id="render-btn">
-          🎬 確認渲染
-        </button>
-      </div>
-      <div class="status" id="step2-status"></div>
-    </div>
-  </div>
+      <!-- Step 2: Script editor -->
+      <div id="step2" class="hidden">
+        <div class="card">
+          <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+            <span>確認腳本</span>
+            <span class="category-badge" id="category-badge"></span>
+          </div>
+          <!-- Batch photo upload -->
+          <div class="batch-upload-zone" onclick="$('batch-photo-input').click()">
+            <label class="batch-upload-label">
+              <span>上傳照片，可多選</span>
+              <span class="batch-hint">系統會配對到合適段落，未配對的段落改用 Pexels 素材。</span>
+            </label>
+          </div>
+          <input type="file" id="batch-photo-input" accept="image/*" multiple style="display:none" onchange="handleBatchUpload(this)">
+          <div id="photo-grid" class="photo-grid hidden"></div>
+          <button class="btn btn-secondary" id="assign-btn" onclick="assignPhotos()" style="display:none;margin-bottom:12px;width:100%">自動配對照片</button>
 
-  <!-- Step 3: Progress & download -->
-  <div id="step3" class="hidden">
-    <div class="card">
-      <div class="card-title">渲染進度</div>
-      <div class="status running" id="step3-status" style="display:block">⏳ 等待 Actions 啟動...</div>
-      <div id="download-area" style="margin-top:12px;display:none">
-        <a id="download-link" class="download-btn" download>⬇️ 下載影片</a>
-        <div style="margin-top:12px">
-          <button class="btn btn-secondary" onclick="reset()">重新製作</button>
+          <div class="segments-list" id="segments-list"></div>
+          <div class="divider"></div>
+          <div style="display:flex;gap:10px">
+            <button class="btn btn-secondary" onclick="backToStep1()" style="flex:1">重新輸入</button>
+            <button class="btn btn-success" onclick="renderVideo()" style="flex:2" id="render-btn">
+              確認渲染
+            </button>
+          </div>
+          <div class="status" id="step2-status"></div>
         </div>
       </div>
-    </div>
-  </div>
 
-  <!-- Recent videos -->
-  <div class="card video-gallery">
-    <div class="card-title">最新影片</div>
-    <div id="video-list"><span style="color:var(--muted);font-size:14px">載入中...</span></div>
+      <!-- Step 3: Progress & download -->
+      <div id="step3" class="hidden">
+        <div class="card">
+          <div class="card-title">渲染進度</div>
+          <div class="status running" id="step3-status" style="display:block">等待 Actions 啟動...</div>
+          <div id="download-area" style="margin-top:12px;display:none">
+            <a id="download-link" class="download-btn" download>下載影片</a>
+            <div style="margin-top:12px">
+              <button class="btn btn-secondary" onclick="reset()">重新製作</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <aside class="side-panel">
+      <div class="quick-note">
+        <strong>製作流程</strong>
+        先貼文字生成五段腳本，再確認每段文案、搜尋詞與可選照片。送出後會啟動 GitHub Actions 渲染，完成後回到這裡下載。
+      </div>
+
+      <!-- Recent videos -->
+      <div class="card video-gallery">
+        <div class="card-title">最新影片</div>
+        <div id="video-list"><span style="color:var(--muted);font-size:14px">載入中...</span></div>
+      </div>
+    </aside>
   </div>
 
 </div>
@@ -387,7 +604,7 @@
 
     const workerUrl = getWorkerUrl();
     $('generate-btn').disabled = true;
-    showStatus('step1-status', '✨ AI 生成腳本中...', 'info');
+    showStatus('step1-status', '正在生成腳本...', 'info');
 
     try {
       const res = await fetch(workerUrl + '/preview', {
@@ -398,7 +615,7 @@
       const data = await res.json();
 
       if (!res.ok || !data.segments) {
-        showStatus('step1-status', `❌ 生成失敗：${data.error || res.status}`, 'error');
+        showStatus('step1-status', `生成失敗：${data.error || res.status}`, 'error');
         $('generate-btn').disabled = false;
         return;
       }
@@ -408,7 +625,7 @@
       hideStatus('step1-status');
 
     } catch (e) {
-      showStatus('step1-status', `❌ 無法連線到 Worker：${e.message}`, 'error');
+      showStatus('step1-status', `無法連線到 Worker：${e.message}`, 'error');
       $('generate-btn').disabled = false;
     }
   }
@@ -441,7 +658,7 @@
           <input type="text" id="seg-query-${i}" value="${seg[1]}">
         </div>
         <div class="seg-photo-slot" id="seg-photo-${i}">
-          <span class="no-photo-label">🎬 自動找影片</span>
+          <span class="no-photo-label">自動找影片</span>
         </div>`;
       list.appendChild(div);
     });
@@ -507,7 +724,7 @@
     let assignSecs = 0;
     const assignTimer = setInterval(() => {
       assignSecs++;
-      $('assign-btn').textContent = `🤖 AI 配對中... ${assignSecs} 秒`;
+      $('assign-btn').textContent = `照片配對中... ${assignSecs} 秒`;
     }, 1000);
 
     try {
@@ -521,18 +738,18 @@
       });
       const result = await res.json();
       if (!res.ok || !result.assignments) {
-        showStatus('step2-status', `❌ AI 配對失敗：${result.error || res.status}`, 'error');
+        showStatus('step2-status', `照片配對失敗：${result.error || res.status}`, 'error');
         return;
       }
       window._assignments = result.assignments;
       updateSegmentPhotoSlots();
-      showStatus('step2-status', '✅ 配對完成！可在各段落確認。', 'done');
+      showStatus('step2-status', '配對完成，可在各段落確認。', 'done');
     } catch (e) {
-      showStatus('step2-status', `❌ 連線失敗：${e.message}`, 'error');
+      showStatus('step2-status', `連線失敗：${e.message}`, 'error');
     } finally {
       clearInterval(assignTimer);
       $('assign-btn').disabled = false;
-      $('assign-btn').textContent = '🤖 AI 自動配對照片';
+      $('assign-btn').textContent = '自動配對照片';
     }
   }
 
@@ -543,9 +760,9 @@
       const photoIdx = window._assignments[i];
       const photo = (photoIdx !== undefined) ? window._uploadedPhotos[photoIdx] : null;
       if (photo) {
-        slot.innerHTML = `<img src="${photo.objectUrl}" alt="段落${i+1}照片"><span style="font-size:12px;color:var(--muted)">照片 ${photoIdx}</span><button class="seg-clear-btn" onclick="clearSegmentPhoto(${i})">✕ 清除</button>`;
+        slot.innerHTML = `<img src="${photo.objectUrl}" alt="段落${i+1}照片"><span style="font-size:12px;color:var(--muted)">照片 ${photoIdx}</span><button class="seg-clear-btn" onclick="clearSegmentPhoto(${i})">清除</button>`;
       } else {
-        slot.innerHTML = '<span class="no-photo-label">🎬 自動找影片</span>';
+        slot.innerHTML = '<span class="no-photo-label">自動找影片</span>';
       }
     }
   }
@@ -569,7 +786,7 @@
     }
 
     $('render-btn').disabled = true;
-    showStatus('step2-status', '⏳ 上傳照片並觸發渲染中...', 'info');
+    showStatus('step2-status', '正在上傳照片並觸發渲染...', 'info');
 
     // Build photos from AI assignments
     const photos = [];
@@ -593,13 +810,13 @@
       });
       const data = await res.json();
       if (!res.ok || !data.triggered) {
-        showStatus('step2-status', `❌ 觸發失敗：${data.error || res.status}`, 'error');
+        showStatus('step2-status', `觸發失敗：${data.error || res.status}`, 'error');
         $('render-btn').disabled = false;
         return;
       }
       triggerTime = data.trigger_time;
     } catch (e) {
-      showStatus('step2-status', `❌ 連線失敗：${e.message}`, 'error');
+      showStatus('step2-status', `連線失敗：${e.message}`, 'error');
       $('render-btn').disabled = false;
       return;
     }
@@ -618,10 +835,10 @@
       const m = Math.floor(elapsed / 60), s = String(elapsed % 60).padStart(2, '0');
       const timeStr = m > 0 ? `${m}分${s}秒` : `${elapsed}秒`;
       if (!runId) {
-        showStatus('step3-status', `⏳ 等待 Actions 啟動... ${timeStr}`, 'running');
+        showStatus('step3-status', `等待 Actions 啟動... ${timeStr}`, 'running');
       } else {
         const link = runUrl ? ` · <a href="${runUrl}" target="_blank">查看進度</a>` : '';
-        showStatus('step3-status', `⏳ 渲染中... ${timeStr}（約 10 分鐘）${link}`, 'running');
+        showStatus('step3-status', `渲染中... ${timeStr}（約 10 分鐘）${link}`, 'running');
       }
     }, 1000);
 
@@ -641,7 +858,7 @@
 
     if (!runId) {
       clearInterval(elapsedTimer);
-      showStatus('step3-status', '❌ 找不到 Actions run。<a href="https://github.com/' + REPO + '/actions" target="_blank">手動查看</a>', 'error');
+      showStatus('step3-status', '找不到 Actions run。<a href="https://github.com/' + REPO + '/actions" target="_blank">手動查看</a>', 'error');
       return;
     }
 
@@ -659,7 +876,7 @@
           if (run.conclusion === 'success') {
             await fetchRelease();
           } else {
-            showStatus('step3-status', `❌ 渲染失敗 (${run.conclusion})。<a href="${run.html_url}" target="_blank">查看詳細</a>`, 'error');
+            showStatus('step3-status', `渲染失敗 (${run.conclusion})。<a href="${run.html_url}" target="_blank">查看詳細</a>`, 'error');
           }
           return;
         }
@@ -676,21 +893,21 @@
       );
       const rel = await res.json();
       const asset = (rel.assets || []).find(a => a.name.endsWith('.mp4'));
-      showStatus('step3-status', '🎉 影片製作完成！', 'done');
+      showStatus('step3-status', '影片製作完成。', 'done');
       loadRecentVideos();
       const area = $('download-area');
       area.style.display = 'block';
       const link = $('download-link');
       if (asset) {
         link.href = asset.browser_download_url;
-        link.textContent = `⬇️ ${asset.name} (${(asset.size/1024/1024).toFixed(1)}MB)`;
+        link.textContent = `${asset.name} (${(asset.size/1024/1024).toFixed(1)}MB)`;
       } else {
         link.href = rel.html_url;
-        link.textContent = '⬇️ 前往 Release 下載';
+        link.textContent = '前往 Release 下載';
         link.target = '_blank';
       }
     } catch {
-      showStatus('step3-status', '✅ 完成！<a href="https://github.com/' + REPO + '/releases" target="_blank">前往下載</a>', 'done');
+      showStatus('step3-status', '已完成。<a href="https://github.com/' + REPO + '/releases" target="_blank">前往下載</a>', 'done');
     }
   }
 
@@ -725,7 +942,7 @@
             <span class="video-item-name">${rel.name}</span>
             <span class="video-item-date">${date}</span>
           </div>
-          <a href="${href}" class="${'video-item-dl'}" ${dlAttr}>⬇️${sizeTxt}</a>
+          <a href="${href}" class="${'video-item-dl'}" ${dlAttr}>下載${sizeTxt}</a>
         </div>`;
       }).join('');
     } catch {
