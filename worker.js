@@ -53,7 +53,9 @@ ${rawText}
 1. 判斷影片類別（從下列選一個最合適的 emoji + 中文標籤）：
    ⛈️ 天氣快報 / 🤖 AI教學 / 📰 新聞摘要 / 🔥 熱門話題 / 📚 知識分享 / 📹 每日快報
 
-2. 生成恰好 5 個段落，每段是 2-3 句口語中文（自然流暢，適合 TTS 朗讀），加上一組英文 Pexels 影片搜尋關鍵字（描述該段畫面場景）。
+2. 生成恰好 5 個段落，每段是 2-3 句口語中文（自然流暢，適合 TTS 朗讀），加上一組英文 Pexels 影片搜尋關鍵字（3-5 個詞，描述畫面上具體看到的場景：人物、地點、物件、動作。用視覺具體詞，不用抽象主題詞）。
+    好：「smoke detector beeping bedroom night」「firefighters rescue building flames」「elderly woman smoke alarm check」
+    壞：「fire news background」「safety home」「news report」
 
 輸出格式（只輸出 JSON，不要任何其他文字）：
 {

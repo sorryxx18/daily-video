@@ -42,7 +42,7 @@ def download_pexels_video(query: str, path: str, orientation: str = "portrait") 
         print(f"          ⚠️  [{query[:30]}] 所有影片已用過，重置輪替")
         fresh = videos
 
-    video = random.choice(fresh)
+    video = random.choice(fresh[:min(10, len(fresh))])
     files = video["video_files"]
     best = max(files, key=lambda f: f.get("width", 0))
 
