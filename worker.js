@@ -2,6 +2,7 @@
  * Cloudflare Worker — daily-video proxy
  *
  * POST /preview  { raw_text }          → generate segments via Gemini
+ * POST /assign   { segments, photos }  → AI photo-to-segment assignment via Gemini Vision
  * POST /         { segments_json }     → trigger GitHub Actions with segments
  *
  * Secrets: GITHUB_PAT, GEMINI_API_KEY
@@ -85,6 +86,56 @@ export default {
     let body;
     try { body = await request.json(); } catch {
       return new Response(JSON.stringify({ error: "Invalid JSON" }), { status: 400, headers: { "Content-Type": "application/json", ...CORS } });
+    }
+
+    // ── /assign — AI photo assignment via Gemini Vision ───────────────────────
+    if (url.pathname === "/assign") {
+      const segments = body.segments;
+      const photos = body.photos;
+      if (!segments || !photos || photos.length === 0) {
+        return new Response(JSON.stringify({ error: "segments and photos required" }), {
+          status: 400, headers: { "Content-Type": "application/json", ...CORS },
+        });
+      }
+
+      const segmentText = segments.map((s, i) => `${i}: ${s[0]}`).join("\n");
+      const parts = [
+        {
+          text: `以下有 ${photos.length} 張照片（編號 0 到 ${photos.length - 1}）和 5 個影片段落。請為每個段落（0 到 4）選出最合適的照片編號。照片可重複使用。\n\n段落：\n${segmentText}\n\n只輸出 JSON，格式：{"0":數字,"1":數字,"2":數字,"3":數字,"4":數字}`,
+        },
+        ...photos.map((p) => ({
+          inline_data: {
+            mime_type: `image/${p.ext === "jpg" ? "jpeg" : p.ext}`,
+            data: p.data.includes(",") ? p.data.split(",")[1] : p.data,
+          },
+        })),
+      ];
+
+      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${env.GEMINI_API_KEY}`;
+      const geminiRes = await fetch(geminiUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contents: [{ parts }] }),
+      });
+      const geminiData = await geminiRes.json();
+      const text = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!geminiRes.ok || !text) {
+        return new Response(
+          JSON.stringify({ error: geminiData.error?.message || "Gemini Vision failed" }),
+          { status: 500, headers: { "Content-Type": "application/json", ...CORS } }
+        );
+      }
+
+      try {
+        const assignments = parseGeminiJSON(text);
+        return new Response(JSON.stringify({ assignments }), {
+          headers: { "Content-Type": "application/json", ...CORS },
+        });
+      } catch (e) {
+        return new Response(JSON.stringify({ error: "Failed to parse AI assignments", raw: text }), {
+          status: 500, headers: { "Content-Type": "application/json", ...CORS },
+        });
+      }
     }
 
     // ── /preview — generate segments ──────────────────────────────────────────

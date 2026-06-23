@@ -191,32 +191,48 @@
     /* Hidden */
     .hidden { display: none !important; }
 
-    /* Photo upload */
-    .photo-upload-area { margin-top: 10px; }
-    .photo-upload-label {
-      display: inline-flex; align-items: center; gap: 6px;
-      padding: 6px 12px;
-      border: 1.5px dashed var(--border);
-      border-radius: 7px;
-      font-size: 12px; font-weight: 500; color: var(--muted);
-      cursor: pointer;
-      background: var(--surface);
-      transition: border-color .15s, color .15s;
+    /* Batch photo upload */
+    .batch-upload-zone {
+      border: 2px dashed var(--border); border-radius: 8px;
+      padding: 16px; text-align: center; cursor: pointer;
+      margin-bottom: 12px; transition: border-color .15s, background .15s;
     }
-    .photo-upload-label:hover { border-color: var(--accent); color: var(--accent); }
-    .photo-preview {
-      display: flex; align-items: center; gap: 8px; margin-top: 6px;
+    .batch-upload-zone:hover { border-color: var(--accent); background: var(--accent-light); }
+    .batch-upload-label { cursor: pointer; display: block; }
+    .batch-upload-label span { display: block; }
+    .batch-upload-label span:first-child { font-size: 14px; font-weight: 600; color: var(--text); }
+    .batch-hint { font-size: 12px; color: var(--muted); margin-top: 3px; }
+    .photo-grid {
+      display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;
     }
-    .photo-preview img {
-      width: 56px; height: 56px; object-fit: cover;
+    .photo-thumb-item {
+      position: relative; width: 64px; height: 64px;
+    }
+    .photo-thumb-item img {
+      width: 64px; height: 64px; object-fit: cover;
+      border-radius: 7px; border: 2px solid var(--border);
+    }
+    .photo-thumb-num {
+      position: absolute; top: 2px; left: 4px;
+      font-size: 10px; font-weight: 700; color: #fff;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+    }
+    .seg-photo-slot {
+      margin-top: 8px; display: flex; align-items: center; gap: 8px;
+      min-height: 36px;
+    }
+    .seg-photo-slot img {
+      width: 48px; height: 48px; object-fit: cover;
       border-radius: 6px; border: 1px solid var(--border);
     }
-    .photo-clear-btn {
-      width: 22px; height: 22px; border-radius: 50%;
-      border: none; background: var(--error); color: #fff;
-      font-size: 11px; cursor: pointer; display: flex;
-      align-items: center; justify-content: center;
-      flex-shrink: 0;
+    .no-photo-label {
+      font-size: 11px; color: var(--muted);
+      background: var(--bg); border: 1px dashed var(--border);
+      border-radius: 6px; padding: 4px 10px;
+    }
+    .seg-clear-btn {
+      font-size: 11px; color: var(--error); background: none;
+      border: none; cursor: pointer; padding: 0; margin-left: 4px;
     }
   </style>
 </head>
@@ -269,6 +285,17 @@
         <span>確認腳本</span>
         <span class="category-badge" id="category-badge"></span>
       </div>
+      <!-- Batch photo upload -->
+      <div class="batch-upload-zone" onclick="$('batch-photo-input').click()">
+        <label class="batch-upload-label">
+          <span>📷 上傳照片（可多選）</span>
+          <span class="batch-hint">AI 自動配對到最合適的段落</span>
+        </label>
+      </div>
+      <input type="file" id="batch-photo-input" accept="image/*" multiple style="display:none" onchange="handleBatchUpload(this)">
+      <div id="photo-grid" class="photo-grid hidden"></div>
+      <button class="btn btn-secondary" id="assign-btn" onclick="assignPhotos()" style="display:none;margin-bottom:12px;width:100%">🤖 AI 自動配對照片</button>
+
       <div class="segments-list" id="segments-list"></div>
       <div class="divider"></div>
       <div style="display:flex;gap:10px">
@@ -364,7 +391,14 @@
     $('category-badge').textContent = category;
     window._category = category;
     window._segments = segments;
-    window._userPhotos = {};
+    window._uploadedPhotos = [];
+    window._assignments = {};
+
+    // Reset photo UI
+    $('photo-grid').innerHTML = '';
+    $('photo-grid').classList.add('hidden');
+    $('assign-btn').style.display = 'none';
+    $('batch-photo-input').value = '';
 
     const list = $('segments-list');
     list.innerHTML = '';
@@ -380,13 +414,8 @@
           <div class="query-label">Pexels 搜尋詞</div>
           <input type="text" id="seg-query-${i}" value="${seg[1]}">
         </div>
-        <div class="photo-upload-area">
-          <input type="file" id="photo-input-${i}" accept="image/*" style="display:none" onchange="handlePhotoSelect(${i}, this)">
-          <label class="photo-upload-label" for="photo-input-${i}">📷 上傳照片（選填）</label>
-          <div id="photo-preview-${i}" class="photo-preview hidden">
-            <img id="photo-thumb-${i}" src="" alt="預覽">
-            <button type="button" class="photo-clear-btn" onclick="clearPhoto(${i})">✕</button>
-          </div>
+        <div class="seg-photo-slot" id="seg-photo-${i}">
+          <span class="no-photo-label">🎬 自動找影片</span>
         </div>`;
       list.appendChild(div);
     });
@@ -397,19 +426,90 @@
     setStep(1);
   }
 
-  function handlePhotoSelect(i, input) {
-    const file = input.files[0];
-    if (!file) return;
-    window._userPhotos[i] = file;
-    const url = URL.createObjectURL(file);
-    $(`photo-thumb-${i}`).src = url;
-    $(`photo-preview-${i}`).classList.remove('hidden');
+  async function handleBatchUpload(input) {
+    const files = Array.from(input.files);
+    if (!files.length) return;
+    window._uploadedPhotos = [];
+    window._assignments = {};
+
+    const grid = $('photo-grid');
+    grid.innerHTML = '';
+    grid.classList.remove('hidden');
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const data = await new Promise(resolve => {
+        const reader = new FileReader();
+        reader.onload = e => resolve(e.target.result);
+        reader.readAsDataURL(file);
+      });
+      const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+      const objectUrl = URL.createObjectURL(file);
+      window._uploadedPhotos.push({ data, ext, objectUrl });
+
+      const item = document.createElement('div');
+      item.className = 'photo-thumb-item';
+      item.innerHTML = `<img src="${objectUrl}" alt="照片 ${i}"><span class="photo-thumb-num">${i}</span>`;
+      grid.appendChild(item);
+    }
+
+    $('assign-btn').style.display = 'block';
+    updateSegmentPhotoSlots();
   }
 
-  function clearPhoto(i) {
-    delete window._userPhotos[i];
-    $(`photo-input-${i}`).value = '';
-    $(`photo-preview-${i}`).classList.add('hidden');
+  async function assignPhotos() {
+    if (!window._uploadedPhotos.length) return;
+    const workerUrl = getWorkerUrl();
+    const segments = Array.from({ length: 5 }, (_, i) => [
+      $(`seg-text-${i}`).value.trim(),
+      $(`seg-query-${i}`).value.trim(),
+    ]);
+
+    $('assign-btn').disabled = true;
+    $('assign-btn').textContent = '🤖 AI 配對中...';
+
+    try {
+      const res = await fetch(workerUrl + '/assign', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          segments,
+          photos: window._uploadedPhotos.map(p => ({ data: p.data, ext: p.ext })),
+        }),
+      });
+      const result = await res.json();
+      if (!res.ok || !result.assignments) {
+        showStatus('step2-status', `❌ AI 配對失敗：${result.error || res.status}`, 'error');
+        return;
+      }
+      window._assignments = result.assignments;
+      updateSegmentPhotoSlots();
+      showStatus('step2-status', '✅ 配對完成！可在各段落確認。', 'done');
+    } catch (e) {
+      showStatus('step2-status', `❌ 連線失敗：${e.message}`, 'error');
+    } finally {
+      $('assign-btn').disabled = false;
+      $('assign-btn').textContent = '🤖 AI 自動配對照片';
+    }
+  }
+
+  function updateSegmentPhotoSlots() {
+    for (let i = 0; i < 5; i++) {
+      const slot = $(`seg-photo-${i}`);
+      if (!slot) continue;
+      const photoIdx = window._assignments[i];
+      const photo = (photoIdx !== undefined) ? window._uploadedPhotos[photoIdx] : null;
+      if (photo) {
+        slot.innerHTML = `<img src="${photo.objectUrl}" alt="段落${i+1}照片"><span style="font-size:12px;color:var(--muted)">照片 ${photoIdx}</span><button class="seg-clear-btn" onclick="clearSegmentPhoto(${i})">✕ 清除</button>`;
+      } else {
+        slot.innerHTML = '<span class="no-photo-label">🎬 自動找影片</span>';
+      }
+    }
+  }
+
+  function clearSegmentPhoto(segIdx) {
+    delete window._assignments[segIdx];
+    updateSegmentPhotoSlots();
   }
 
   // ── Step 2: render ─────────────────────────────────────────────────────────
@@ -428,16 +528,13 @@
     $('render-btn').disabled = true;
     showStatus('step2-status', '⏳ 上傳照片並觸發渲染中...', 'info');
 
-    // Encode user photos as base64
+    // Build photos from AI assignments
     const photos = [];
-    for (const [idxStr, file] of Object.entries(window._userPhotos || {})) {
-      const data = await new Promise(resolve => {
-        const reader = new FileReader();
-        reader.onload = e => resolve(e.target.result);
-        reader.readAsDataURL(file);
-      });
-      const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
-      photos.push({ index: parseInt(idxStr), data, ext });
+    for (const [segIdxStr, photoIdx] of Object.entries(window._assignments || {})) {
+      const photo = (window._uploadedPhotos || [])[photoIdx];
+      if (photo) {
+        photos.push({ index: parseInt(segIdxStr), data: photo.data, ext: photo.ext });
+      }
     }
 
     let triggerTime;
