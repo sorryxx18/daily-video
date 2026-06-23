@@ -3,9 +3,14 @@ name: Render Video
 on:
   workflow_dispatch:
     inputs:
-      raw_text:
-        description: '原始文字內容'
+      segments_json:
+        description: 'Pre-generated segments JSON array'
         required: true
+        type: string
+      category:
+        description: '影片類別標籤'
+        required: false
+        default: '📹 每日快報'
         type: string
 
 jobs:
@@ -29,7 +34,7 @@ jobs:
           python-version: '3.11'
 
       - name: Install Python deps
-        run: pip install edge-tts requests google-generativeai
+        run: pip install edge-tts requests
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -37,18 +42,11 @@ jobs:
       - name: Install Node deps
         run: bun install
 
-      - name: Generate segments with Gemini
-        env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          RAW_TEXT: ${{ inputs.raw_text }}
-        run: |
-          python scripts/generate_segments.py > /tmp/ai_output.json
-          echo "CATEGORY=$(python3 -c "import json; d=json.load(open('/tmp/ai_output.json')); print(d['category'])")" >> $GITHUB_ENV
-          echo "SEGMENTS_JSON=$(python3 -c "import json; d=json.load(open('/tmp/ai_output.json')); print(json.dumps(d['segments']))")" >> $GITHUB_ENV
-
       - name: Render video
         env:
           PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+          SEGMENTS_JSON: ${{ inputs.segments_json }}
+          CATEGORY: ${{ inputs.category }}
         run: python scripts/render.py
 
       - name: Create release with video

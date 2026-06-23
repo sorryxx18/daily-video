@@ -3,175 +3,436 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Daily Video Generator</title>
+  <title>Daily Video</title>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #fafafa;
+      --surface: #ffffff;
+      --border: #e5e7eb;
+      --border-focus: #6366f1;
+      --text: #111827;
+      --muted: #6b7280;
+      --accent: #6366f1;
+      --accent-hover: #4f46e5;
+      --accent-light: #eef2ff;
+      --success: #059669;
+      --success-light: #ecfdf5;
+      --error: #dc2626;
+      --error-light: #fef2f2;
+      --warning: #d97706;
+      --warning-light: #fffbeb;
+      --radius: 10px;
+      --shadow: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.04);
+      --shadow-md: 0 4px 16px rgba(0,0,0,.08);
+    }
+
     body {
-      font-family: -apple-system, 'PingFang TC', 'Microsoft JhengHei', sans-serif;
-      background: #0f0f13;
-      color: #e8e8f0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+      background: var(--bg);
+      color: var(--text);
       min-height: 100vh;
+      padding: 40px 16px 80px;
+    }
+
+    .container { max-width: 680px; margin: 0 auto; }
+
+    /* Header */
+    .header { text-align: center; margin-bottom: 40px; }
+    .header h1 { font-size: 28px; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 6px; }
+    .header p { font-size: 15px; color: var(--muted); }
+
+    /* Step indicator */
+    .steps {
       display: flex;
       align-items: center;
-      justify-content: center;
-      padding: 24px;
+      gap: 0;
+      margin-bottom: 32px;
     }
+    .step {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 1;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .step.active { color: var(--accent); }
+    .step.done { color: var(--success); }
+    .step-num {
+      width: 24px; height: 24px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 700;
+      flex-shrink: 0;
+    }
+    .step.active .step-num { border-color: var(--accent); background: var(--accent); color: #fff; }
+    .step.done .step-num { border-color: var(--success); background: var(--success); color: #fff; }
+    .step-divider { flex: 0 0 24px; height: 1px; background: var(--border); margin: 0 4px; }
+
+    /* Card */
     .card {
-      background: #1a1a24;
-      border: 1px solid #2a2a38;
-      border-radius: 16px;
-      padding: 32px;
-      width: 100%;
-      max-width: 640px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      box-shadow: var(--shadow);
+      margin-bottom: 16px;
     }
-    h1 { font-size: 22px; font-weight: 700; margin-bottom: 6px; color: #fff; }
-    .subtitle { font-size: 13px; color: #555566; margin-bottom: 24px; }
-    label { display: block; font-size: 13px; color: #8888aa; margin-bottom: 6px; margin-top: 16px; }
-    textarea, input {
+    .card-title { font-size: 15px; font-weight: 600; margin-bottom: 16px; }
+
+    /* Form elements */
+    label { display: block; font-size: 13px; font-weight: 500; color: var(--muted); margin-bottom: 6px; }
+    textarea, input[type="text"] {
       width: 100%;
-      background: #12121a;
-      border: 1px solid #2a2a38;
+      background: var(--bg);
+      border: 1px solid var(--border);
       border-radius: 8px;
-      color: #e8e8f0;
-      padding: 12px;
+      color: var(--text);
+      padding: 10px 12px;
       font-size: 14px;
       font-family: inherit;
       outline: none;
-      transition: border-color 0.2s;
+      transition: border-color .15s, box-shadow .15s;
+      resize: none;
     }
-    textarea:focus, input:focus { border-color: #5555cc; }
-    textarea { resize: vertical; min-height: 180px; line-height: 1.6; }
-    button {
-      width: 100%;
-      margin-top: 20px;
-      padding: 14px;
-      background: #4444cc;
-      border: none;
-      border-radius: 8px;
-      color: #fff;
-      font-size: 15px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background 0.2s;
+    textarea:focus, input[type="text"]:focus {
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 3px rgba(99,102,241,.1);
     }
-    button:hover:not(:disabled) { background: #5555dd; }
-    button:disabled { opacity: 0.5; cursor: not-allowed; }
-    #status {
-      margin-top: 20px;
-      padding: 14px;
-      border-radius: 8px;
-      font-size: 14px;
-      display: none;
-      line-height: 1.6;
-    }
-    #status.running { background: #1a2a1a; border: 1px solid #2a4a2a; color: #88cc88; }
-    #status.done    { background: #1a1a2a; border: 1px solid #3a3a6a; color: #aaaaff; }
-    #status.error   { background: #2a1a1a; border: 1px solid #4a2a2a; color: #ff8888; }
-    a.dl-btn {
-      display: inline-block;
-      margin-top: 10px;
+    textarea { min-height: 160px; line-height: 1.6; }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      gap: 6px;
       padding: 10px 20px;
-      background: #225522;
-      border: 1px solid #336633;
       border-radius: 8px;
-      color: #88ff88;
-      text-decoration: none;
-      font-weight: 600;
-      font-size: 14px;
+      font-size: 14px; font-weight: 600;
+      border: none; cursor: pointer;
+      transition: background .15s, opacity .15s, transform .1s;
     }
-    a.dl-btn:hover { background: #336633; }
-    .hint { font-size: 12px; color: #555566; margin-top: 5px; }
-    details { margin-top: 20px; }
-    summary { font-size: 13px; color: #555588; cursor: pointer; }
-    summary:hover { color: #8888cc; }
-    .settings-body { margin-top: 12px; padding: 16px; background: #12121a; border-radius: 8px; border: 1px solid #2a2a38; }
+    .btn:active:not(:disabled) { transform: scale(0.98); }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover:not(:disabled) { background: var(--accent-hover); }
+    .btn-secondary { background: var(--accent-light); color: var(--accent); }
+    .btn-secondary:hover:not(:disabled) { background: #e0e7ff; }
+    .btn-success { background: var(--success); color: #fff; }
+    .btn-success:hover:not(:disabled) { background: #047857; }
+    .btn-full { width: 100%; }
+
+    /* Segment editor */
+    .segments-list { display: flex; flex-direction: column; gap: 12px; }
+    .segment-card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px;
+    }
+    .segment-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .segment-num {
+      font-size: 11px; font-weight: 700; color: var(--muted);
+      background: var(--border);
+      padding: 2px 8px; border-radius: 20px;
+    }
+    .segment-card textarea { min-height: 72px; font-size: 13px; background: #fff; }
+    .segment-query { margin-top: 8px; }
+    .segment-query input { font-size: 12px; background: #fff; }
+    .query-label {
+      font-size: 11px; color: var(--muted); margin-bottom: 4px;
+    }
+
+    /* Status */
+    .status {
+      padding: 12px 16px; border-radius: 8px;
+      font-size: 14px; line-height: 1.6;
+      display: none;
+      margin-top: 12px;
+    }
+    .status.info    { background: var(--accent-light); color: var(--accent); border: 1px solid #c7d2fe; }
+    .status.running { background: var(--warning-light); color: var(--warning); border: 1px solid #fde68a; }
+    .status.done    { background: var(--success-light); color: var(--success); border: 1px solid #a7f3d0; }
+    .status.error   { background: var(--error-light); color: var(--error); border: 1px solid #fecaca; }
+
+    /* Download */
+    .download-btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      margin-top: 10px; padding: 10px 20px;
+      background: var(--success); color: #fff;
+      border-radius: 8px; text-decoration: none;
+      font-weight: 600; font-size: 14px;
+      transition: background .15s;
+    }
+    .download-btn:hover { background: #047857; }
+
+    /* Category badge */
+    .category-badge {
+      display: inline-block;
+      background: var(--accent-light); color: var(--accent);
+      padding: 3px 10px; border-radius: 20px;
+      font-size: 13px; font-weight: 600;
+    }
+
+    /* Settings */
+    details { margin-top: 16px; }
+    summary { font-size: 13px; color: var(--muted); cursor: pointer; user-select: none; }
+    summary:hover { color: var(--accent); }
+    .settings-body { margin-top: 12px; padding: 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; }
+
+    /* Divider */
+    .divider { height: 1px; background: var(--border); margin: 20px 0; }
+
+    /* Hidden */
+    .hidden { display: none !important; }
   </style>
 </head>
 <body>
-<div class="card">
-  <h1>📹 Daily Video Generator</h1>
-  <p class="subtitle">貼上任何文字，AI 自動生成短影片</p>
+<div class="container">
 
-  <label>原始內容</label>
-  <textarea id="raw-text" placeholder="貼上天氣報告、課程筆記、新聞摘要…任何文字都可以。AI 會自動判斷風格並生成腳本。"></textarea>
+  <!-- Header -->
+  <div class="header">
+    <h1>📹 Daily Video</h1>
+    <p>貼上任何文字，AI 生成腳本，一鍵渲染影片</p>
+  </div>
 
-  <button id="submit-btn" onclick="submitJob()">🎬 生成影片</button>
-
-  <div id="status"></div>
-
-  <details id="settings-panel">
-    <summary>⚙️ 設定（首次使用需填寫）</summary>
-    <div class="settings-body">
-      <label>Worker URL</label>
-      <input id="worker-url" type="text" placeholder="https://daily-video-trigger.你的帳號.workers.dev">
-      <p class="hint">Cloudflare Worker 的網址，用來安全地觸發 GitHub Actions。設定一次即可。</p>
-      <button style="margin-top:12px; background:#333344; font-size:13px; padding:8px;" onclick="saveSettings()">儲存設定</button>
+  <!-- Steps -->
+  <div class="steps">
+    <div class="step active" id="step1-indicator">
+      <div class="step-num">1</div>
+      <span>輸入內容</span>
     </div>
-  </details>
+    <div class="step-divider"></div>
+    <div class="step" id="step2-indicator">
+      <div class="step-num">2</div>
+      <span>確認腳本</span>
+    </div>
+    <div class="step-divider"></div>
+    <div class="step" id="step3-indicator">
+      <div class="step-num">3</div>
+      <span>渲染下載</span>
+    </div>
+  </div>
+
+  <!-- Step 1: Input -->
+  <div id="step1">
+    <div class="card">
+      <div class="card-title">原始內容</div>
+      <textarea id="raw-text" placeholder="貼上天氣報告、課程筆記、新聞摘要…任何文字都可以。"></textarea>
+      <div style="margin-top:12px">
+        <button class="btn btn-primary btn-full" id="generate-btn" onclick="generateScript()">
+          ✨ 生成腳本
+        </button>
+      </div>
+      <div class="status" id="step1-status"></div>
+    </div>
+
+    <details>
+      <summary>⚙️ 設定（首次使用需填寫）</summary>
+      <div class="settings-body">
+        <label>Worker URL</label>
+        <input type="text" id="worker-url" placeholder="https://daily-video-trigger.你的帳號.workers.dev">
+        <p style="font-size:12px;color:var(--muted);margin-top:6px">設定一次，存在瀏覽器 localStorage。</p>
+        <button class="btn btn-secondary" style="margin-top:10px" onclick="saveSettings()">儲存設定</button>
+      </div>
+    </details>
+  </div>
+
+  <!-- Step 2: Script editor -->
+  <div id="step2" class="hidden">
+    <div class="card">
+      <div class="card-title" style="display:flex;align-items:center;justify-content:space-between">
+        <span>確認腳本</span>
+        <span class="category-badge" id="category-badge"></span>
+      </div>
+      <div class="segments-list" id="segments-list"></div>
+      <div class="divider"></div>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-secondary" onclick="backToStep1()" style="flex:1">← 重新輸入</button>
+        <button class="btn btn-success" onclick="renderVideo()" style="flex:2" id="render-btn">
+          🎬 確認渲染
+        </button>
+      </div>
+      <div class="status" id="step2-status"></div>
+    </div>
+  </div>
+
+  <!-- Step 3: Progress & download -->
+  <div id="step3" class="hidden">
+    <div class="card">
+      <div class="card-title">渲染進度</div>
+      <div class="status running" id="step3-status" style="display:block">⏳ 等待 Actions 啟動...</div>
+      <div id="download-area" style="margin-top:12px;display:none">
+        <a id="download-link" class="download-btn" download>⬇️ 下載影片</a>
+        <div style="margin-top:12px">
+          <button class="btn btn-secondary" onclick="reset()">重新製作</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <script>
   const $ = id => document.getElementById(id);
+  const REPO = 'sorryxx18/daily-video';
 
+  // Restore settings
   window.onload = () => {
     const url = localStorage.getItem('dv_worker_url');
     if (url) $('worker-url').value = url;
   };
 
   function saveSettings() {
-    localStorage.setItem('dv_worker_url', $('worker-url').value.trim());
-    setStatus('✅ 設定已儲存', 'done');
+    const url = $('worker-url').value.trim();
+    if (!url) return;
+    localStorage.setItem('dv_worker_url', url);
+    showStatus('step1-status', '✅ 設定已儲存', 'done');
   }
 
-  function setStatus(msg, type) {
-    const el = $('status');
+  function showStatus(id, msg, type) {
+    const el = $(id);
     el.style.display = 'block';
-    el.className = type;
+    el.className = `status ${type}`;
     el.innerHTML = msg;
   }
 
-  async function submitJob() {
-    const rawText = $('raw-text').value.trim();
-    const workerUrl = ($('worker-url').value || localStorage.getItem('dv_worker_url') || '').trim();
+  function hideStatus(id) {
+    $(id).style.display = 'none';
+  }
 
-    if (!rawText) return setStatus('請貼上原始文字內容。', 'error');
+  function setStep(n) {
+    ['step1','step2','step3'].forEach((id, i) => {
+      $(id).classList.toggle('hidden', i !== n - 1);
+    });
+    [1,2,3].forEach(i => {
+      const el = $(`step${i}-indicator`);
+      el.className = 'step' + (i < n ? ' done' : i === n ? ' active' : '');
+    });
+  }
+
+  function getWorkerUrl() {
+    return ($('worker-url').value || localStorage.getItem('dv_worker_url') || '').trim();
+  }
+
+  // ── Step 1: generate script ────────────────────────────────────────────────
+  async function generateScript() {
+    const rawText = $('raw-text').value.trim();
+    if (!rawText) return showStatus('step1-status', '請貼上原始文字內容。', 'error');
+
+    const workerUrl = getWorkerUrl();
     if (!workerUrl) {
-      $('settings-panel').open = true;
-      return setStatus('請先在下方設定填入 Worker URL。', 'error');
+      document.querySelector('details').open = true;
+      return showStatus('step1-status', '請先在下方設定填入 Worker URL。', 'error');
     }
 
-    $('submit-btn').disabled = true;
-    setStatus('⏳ 觸發 GitHub Actions...', 'running');
+    $('generate-btn').disabled = true;
+    showStatus('step1-status', '✨ AI 生成腳本中...', 'info');
+
+    try {
+      const res = await fetch(workerUrl + '/preview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ raw_text: rawText }),
+      });
+      const data = await res.json();
+
+      if (!res.ok || !data.segments) {
+        showStatus('step1-status', `❌ 生成失敗：${data.error || res.status}`, 'error');
+        $('generate-btn').disabled = false;
+        return;
+      }
+
+      renderScriptEditor(data.category, data.segments);
+      setStep(2);
+      hideStatus('step1-status');
+
+    } catch (e) {
+      showStatus('step1-status', `❌ 無法連線到 Worker：${e.message}`, 'error');
+      $('generate-btn').disabled = false;
+    }
+  }
+
+  function renderScriptEditor(category, segments) {
+    $('category-badge').textContent = category;
+    window._category = category;
+    window._segments = segments;
+
+    const list = $('segments-list');
+    list.innerHTML = '';
+    segments.forEach((seg, i) => {
+      const div = document.createElement('div');
+      div.className = 'segment-card';
+      div.innerHTML = `
+        <div class="segment-header">
+          <span class="segment-num">段落 ${i+1}</span>
+        </div>
+        <textarea id="seg-text-${i}" rows="3">${seg[0]}</textarea>
+        <div class="segment-query">
+          <div class="query-label">Pexels 搜尋詞</div>
+          <input type="text" id="seg-query-${i}" value="${seg[1]}">
+        </div>`;
+      list.appendChild(div);
+    });
+  }
+
+  function backToStep1() {
+    $('generate-btn').disabled = false;
+    setStep(1);
+  }
+
+  // ── Step 2: render ─────────────────────────────────────────────────────────
+  async function renderVideo() {
+    const workerUrl = getWorkerUrl();
+    const category = window._category;
+    const segments = Array.from({ length: 5 }, (_, i) => [
+      $(`seg-text-${i}`).value.trim(),
+      $(`seg-query-${i}`).value.trim(),
+    ]);
+
+    if (segments.some(s => !s[0] || !s[1])) {
+      return showStatus('step2-status', '每個段落的文字和搜尋詞都必須填寫。', 'error');
+    }
+
+    $('render-btn').disabled = true;
+    showStatus('step2-status', '⏳ 觸發渲染中...', 'info');
 
     let triggerTime;
     try {
       const res = await fetch(workerUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ raw_text: rawText }),
+        body: JSON.stringify({
+          segments_json: JSON.stringify(segments),
+          category,
+        }),
       });
       const data = await res.json();
       if (!res.ok || !data.triggered) {
-        setStatus(`❌ 觸發失敗：${data.error || res.status}`, 'error');
-        $('submit-btn').disabled = false;
+        showStatus('step2-status', `❌ 觸發失敗：${data.error || res.status}`, 'error');
+        $('render-btn').disabled = false;
         return;
       }
       triggerTime = data.trigger_time;
     } catch (e) {
-      setStatus(`❌ 無法連線到 Worker：${e.message}`, 'error');
-      $('submit-btn').disabled = false;
+      showStatus('step2-status', `❌ 連線失敗：${e.message}`, 'error');
+      $('render-btn').disabled = false;
       return;
     }
 
-    setStatus('✅ 已觸發，等待 Actions 啟動（約 30 秒）...', 'running');
+    setStep(3);
     await new Promise(r => setTimeout(r, 8000));
     pollRun(triggerTime);
   }
 
+  // ── Step 3: poll ───────────────────────────────────────────────────────────
   async function pollRun(triggerTime) {
-    const REPO = 'sorryxx18/daily-video';
-    let runId = null;
-    let attempts = 0;
+    let runId = null, attempts = 0;
 
     while (!runId && attempts < 15) {
       attempts++;
@@ -182,21 +443,17 @@
           { headers: { Accept: 'application/vnd.github+json' } }
         );
         const data = await res.json();
-        const run = (data.workflow_runs || []).find(r =>
-          new Date(r.created_at) >= new Date(triggerTime)
-        );
+        const run = (data.workflow_runs || []).find(r => new Date(r.created_at) >= new Date(triggerTime));
         if (run) runId = run.id;
       } catch {}
     }
 
     if (!runId) {
-      setStatus('❌ 找不到對應的 Actions run，請到 <a href="https://github.com/sorryxx18/daily-video/actions" target="_blank" style="color:#ff8888">GitHub Actions</a> 頁面查看。', 'error');
-      $('submit-btn').disabled = false;
+      showStatus('step3-status', '❌ 找不到 Actions run。<a href="https://github.com/' + REPO + '/actions" target="_blank">手動查看</a>', 'error');
       return;
     }
 
     let elapsed = 0;
-
     while (true) {
       elapsed += 15;
       await new Promise(r => setTimeout(r, 15000));
@@ -206,45 +463,52 @@
           { headers: { Accept: 'application/vnd.github+json' } }
         );
         const run = await res.json();
-        const mins = Math.floor(elapsed / 60);
-        const secs = elapsed % 60;
+        const m = Math.floor(elapsed / 60), s = elapsed % 60;
 
         if (run.status === 'completed') {
           if (run.conclusion === 'success') {
-            await fetchRelease(REPO, runId);
+            await fetchRelease();
           } else {
-            setStatus(`❌ Actions 失敗 (${run.conclusion})。<br><a href="${run.html_url}" target="_blank" style="color:#ff8888">查看詳細</a>`, 'error');
-            $('submit-btn').disabled = false;
+            showStatus('step3-status', `❌ 渲染失敗 (${run.conclusion})。<a href="${run.html_url}" target="_blank">查看詳細</a>`, 'error');
           }
           return;
         }
-
-        setStatus(`⏳ 渲染中... ${mins}分${secs}秒 (<a href="${run.html_url}" target="_blank" style="color:#88cc88">查看進度</a>)`, 'running');
+        showStatus('step3-status', `⏳ 渲染中... ${m}分${s}秒 · <a href="${run.html_url}" target="_blank">查看進度</a>`, 'running');
       } catch {}
     }
   }
 
-  async function fetchRelease(repo, runId) {
+  async function fetchRelease() {
     await new Promise(r => setTimeout(r, 3000));
     try {
       const res = await fetch(
-        `https://api.github.com/repos/${repo}/releases/latest`,
+        `https://api.github.com/repos/${REPO}/releases/latest`,
         { headers: { Accept: 'application/vnd.github+json' } }
       );
       const rel = await res.json();
       const asset = (rel.assets || []).find(a => a.name.endsWith('.mp4'));
+      showStatus('step3-status', '🎉 影片製作完成！', 'done');
+      const area = $('download-area');
+      area.style.display = 'block';
+      const link = $('download-link');
       if (asset) {
-        setStatus(
-          `🎉 影片完成！<br><a class="dl-btn" href="${asset.browser_download_url}" download>⬇️ 下載影片 (${(asset.size/1024/1024).toFixed(1)}MB)</a>`,
-          'done'
-        );
+        link.href = asset.browser_download_url;
+        link.textContent = `⬇️ 下載影片 (${(asset.size/1024/1024).toFixed(1)}MB)`;
       } else {
-        setStatus(`✅ 完成！<a href="${rel.html_url}" target="_blank" style="color:#aaaaff">前往 Release 下載</a>`, 'done');
+        link.href = rel.html_url;
+        link.textContent = '⬇️ 前往 Release 下載';
+        link.target = '_blank';
       }
     } catch {
-      setStatus('✅ 渲染完成！<a href="https://github.com/' + repo + '/releases" target="_blank" style="color:#aaaaff">前往 Releases 下載</a>', 'done');
+      showStatus('step3-status', '✅ 完成！<a href="https://github.com/' + REPO + '/releases" target="_blank">前往下載</a>', 'done');
     }
-    $('submit-btn').disabled = false;
+  }
+
+  function reset() {
+    $('generate-btn').disabled = false;
+    $('render-btn').disabled = false;
+    $('download-area').style.display = 'none';
+    setStep(1);
   }
 </script>
 </body>
