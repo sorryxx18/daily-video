@@ -171,6 +171,26 @@
     }
     .download-btn:hover { background: #047857; }
 
+    /* Recent videos gallery */
+    .video-gallery { margin-top: 32px; }
+    .video-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 0; border-bottom: 1px solid var(--border);
+      gap: 12px;
+    }
+    .video-item:last-child { border-bottom: none; }
+    .video-item-info { flex: 1; min-width: 0; }
+    .video-item-name { display: block; font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .video-item-date { display: block; font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .video-item-dl {
+      flex-shrink: 0;
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 12px; background: var(--success); color: #fff;
+      border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: 600;
+      transition: background .15s;
+    }
+    .video-item-dl:hover { background: #047857; }
+
     /* Category badge */
     .category-badge {
       display: inline-block;
@@ -320,6 +340,12 @@
         </div>
       </div>
     </div>
+  </div>
+
+  <!-- Recent videos -->
+  <div class="card video-gallery">
+    <div class="card-title">最新影片</div>
+    <div id="video-list"><span style="color:var(--muted);font-size:14px">載入中...</span></div>
   </div>
 
 </div>
@@ -651,6 +677,7 @@
       const rel = await res.json();
       const asset = (rel.assets || []).find(a => a.name.endsWith('.mp4'));
       showStatus('step3-status', '🎉 影片製作完成！', 'done');
+      loadRecentVideos();
       const area = $('download-area');
       area.style.display = 'block';
       const link = $('download-link');
@@ -673,6 +700,40 @@
     $('download-area').style.display = 'none';
     setStep(1);
   }
+
+  async function loadRecentVideos() {
+    const list = $('video-list');
+    try {
+      const res = await fetch(
+        `https://api.github.com/repos/${REPO}/releases?per_page=10`,
+        { headers: { Accept: 'application/vnd.github+json' } }
+      );
+      const releases = await res.json();
+      if (!Array.isArray(releases) || !releases.length) {
+        list.innerHTML = '<span style="color:var(--muted);font-size:14px">尚無影片</span>';
+        return;
+      }
+      list.innerHTML = releases.map(rel => {
+        const asset = (rel.assets || []).find(a => a.name.endsWith('.mp4'));
+        const date = rel.created_at ? rel.created_at.slice(0, 10) : '';
+        const sizeTxt = asset ? ` (${(asset.size / 1024 / 1024).toFixed(1)}MB)` : '';
+        const href = asset ? asset.browser_download_url : rel.html_url;
+        const dlAttr = asset ? 'download' : 'target="_blank"';
+        const label = asset ? asset.name : rel.name;
+        return `<div class="video-item">
+          <div class="video-item-info">
+            <span class="video-item-name">${rel.name}</span>
+            <span class="video-item-date">${date}</span>
+          </div>
+          <a href="${href}" class="${'video-item-dl'}" ${dlAttr}>⬇️${sizeTxt}</a>
+        </div>`;
+      }).join('');
+    } catch {
+      list.innerHTML = '<span style="color:var(--muted);font-size:14px">載入失敗</span>';
+    }
+  }
+
+  loadRecentVideos();
 </script>
 </body>
 </html>
