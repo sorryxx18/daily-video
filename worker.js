@@ -5,7 +5,9 @@
  * POST /assign   { segments, photos }  → AI photo-to-segment assignment via Gemini Vision
  * POST /         { segments_json }     → trigger GitHub Actions with segments
  *
- * Secrets: GITHUB_PAT, GEMINI_API_KEY
+ * GET  /thumb?q=query               → Pexels photo thumbnail URL
+ *
+ * Secrets: GITHUB_PAT, GEMINI_API_KEY, PEXELS_API_KEY
  */
 
 const REPO = "sorryxx18/daily-video";
@@ -13,7 +15,7 @@ const WORKFLOW = "render.yml";
 const CORS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
 };
 
 const GEMINI_MODELS = [
@@ -82,9 +84,31 @@ function parseGeminiJSON(text) {
 export default {
   async fetch(request, env) {
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS });
-    if (request.method !== "POST") return new Response("POST only", { status: 405, headers: CORS });
 
     const url = new URL(request.url);
+
+    // ── GET /thumb?q=query — Pexels photo thumbnail ───────────────────────────
+    if (request.method === "GET" && url.pathname === "/thumb") {
+      const q = url.searchParams.get("q") || "";
+      if (!q) return new Response(JSON.stringify({ url: null }), { headers: { "Content-Type": "application/json", ...CORS } });
+      if (!env.PEXELS_API_KEY) return new Response(JSON.stringify({ url: null }), { headers: { "Content-Type": "application/json", ...CORS } });
+      try {
+        const pexRes = await fetch(
+          `https://api.pexels.com/v1/search?query=${encodeURIComponent(q)}&per_page=1&orientation=landscape`,
+          { headers: { Authorization: env.PEXELS_API_KEY } }
+        );
+        const pexData = await pexRes.json();
+        const photo = pexData.photos?.[0];
+        return new Response(JSON.stringify({ url: photo?.src?.medium || null }), {
+          headers: { "Content-Type": "application/json", ...CORS },
+        });
+      } catch {
+        return new Response(JSON.stringify({ url: null }), { headers: { "Content-Type": "application/json", ...CORS } });
+      }
+    }
+
+    if (request.method !== "POST") return new Response("Method not allowed", { status: 405, headers: CORS });
+
     let body;
     try { body = await request.json(); } catch {
       return new Response(JSON.stringify({ error: "Invalid JSON" }), { status: 400, headers: { "Content-Type": "application/json", ...CORS } });
