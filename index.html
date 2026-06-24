@@ -338,7 +338,7 @@
         .workspace {
             background: var(--bg-card);
             border: 1px solid var(--border);
-            border-radius: 8px;
+            border-radius: 24px;
             padding: 2.5rem;
             position: relative;
             overflow: hidden;
@@ -524,6 +524,74 @@
             margin-bottom: 1.5rem;
         }
 
+        /* 渲染進度條 */
+        .progress-bar {
+            width: 100%;
+            max-width: 400px;
+            height: 8px;
+            background: var(--bg-card);
+            border-radius: 100px;
+            margin: 0 auto 1rem;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            border-radius: 100px;
+            transition: width 0.5s ease;
+            position: relative;
+        }
+
+        .progress-fill.indeterminate {
+            animation: progress-indeterminate 2s ease-in-out infinite;
+        }
+
+        @keyframes progress-indeterminate {
+            0% { width: 0%; transform: translateX(0%); }
+            50% { width: 60%; transform: translateX(60%); }
+            100% { width: 0%; transform: translateX(200%); }
+        }
+
+        .render-stats {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-top: 1.5rem;
+        }
+
+        .stat { text-align: center; }
+        .stat-value { font-size: 1.5rem; font-weight: 700; color: var(--primary-light); }
+        .stat-label { font-size: 0.8rem; color: var(--text-muted); margin-top: 4px; }
+
+        /* 日誌面板 */
+        .log-panel {
+            background: #0a0a14;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-top: 1.5rem;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 0.8rem;
+            text-align: left;
+            max-height: 200px;
+            overflow-y: auto;
+            display: none;
+        }
+
+        .log-entry {
+            padding: 4px 0;
+            color: var(--text-muted);
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+        }
+
+        .log-entry:last-child { border-bottom: none; }
+        .log-time { color: var(--primary); margin-right: 8px; }
+        .log-success { color: var(--success); }
+        .log-info { color: var(--accent); }
+        .log-err { color: #f87171; }
+
         /* 底部操作 */
         .action-bar {
             display: flex;
@@ -695,7 +763,7 @@
     <nav class="navbar">
         <div class="nav-content">
             <a href="#" class="logo">
-                <div class="logo-icon">🎬</div>
+                <div class="logo-icon"><i class="fas fa-clapperboard"></i></div>
                 <div>
                     <div class="logo-text">廢片生成所</div>
                     <div class="logo-sub">DVDaily Video Studio</div>
@@ -816,9 +884,27 @@
                         <div class="render-ring"></div>
                         <div class="render-center"><i class="fas fa-film"></i></div>
                     </div>
-                    <h3>正在渲染中...</h3>
+                    <h3 id="render-title">正在渲染中...</h3>
                     <p>GitHub Actions 已啟動，正在處理您的影片</p>
-                    <div class="status running" id="step3-status" style="display:block">等待 Actions 啟動...</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill indeterminate" id="progress-fill"></div>
+                    </div>
+                    <div class="render-stats">
+                        <div class="stat">
+                            <div class="stat-value" id="stat-segments">0/5</div>
+                            <div class="stat-label">段落完成</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value" id="stat-time">0s</div>
+                            <div class="stat-label">已用時間</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">1080p</div>
+                            <div class="stat-label">輸出品質</div>
+                        </div>
+                    </div>
+                    <div class="log-panel" id="log-panel"></div>
+                    <div class="status" id="step3-status" style="display:none"></div>
                     <div id="download-area" style="margin-top:1.5rem;display:none">
                         <a id="download-link" class="download-btn" download>⬇️ 下載影片</a>
                         <div style="margin-top:1rem">
@@ -1136,23 +1222,44 @@
     }
 
     setStep(3);
+    $('stat-segments').textContent = `0/${segments.length}`;
     pollRun(triggerTime);
+  }
+
+  function addLog(msg, type = 'info') {
+    const panel = $('log-panel');
+    panel.style.display = 'block';
+    const now = new Date();
+    const time = now.toTimeString().slice(0, 8);
+    const icon = type === 'success' ? '✓' : type === 'error' ? '✗' : '→';
+    const cls = type === 'success' ? 'log-success' : type === 'error' ? 'log-err' : 'log-info';
+    const entry = document.createElement('div');
+    entry.className = 'log-entry';
+    entry.innerHTML = `<span class="log-time">${time}</span><span class="${cls}">${icon}</span> ${msg}`;
+    panel.appendChild(entry);
+    panel.scrollTop = panel.scrollHeight;
+  }
+
+  function updateStatTime(elapsed) {
+    const m = Math.floor(elapsed / 60), s = String(elapsed % 60).padStart(2, '0');
+    $('stat-time').textContent = m > 0 ? `${m}分${s}秒` : `${elapsed}秒`;
   }
 
   // ── Step 3: poll ───────────────────────────────────────────────────────────
   async function pollRun(triggerTime) {
     let runId = null, attempts = 0, elapsed = 0, runUrl = '';
 
+    addLog('Actions workflow 已觸發', 'success');
+    addLog('等待 runner 啟動...', 'info');
+
     // Live elapsed timer — updates every second throughout
     const elapsedTimer = setInterval(() => {
       elapsed++;
-      const m = Math.floor(elapsed / 60), s = String(elapsed % 60).padStart(2, '0');
-      const timeStr = m > 0 ? `${m}分${s}秒` : `${elapsed}秒`;
+      updateStatTime(elapsed);
       if (!runId) {
-        showStatus('step3-status', `等待 Actions 啟動... ${timeStr}`, 'running');
+        $('render-title').textContent = '等待 Actions 啟動...';
       } else {
-        const link = runUrl ? ` · <a href="${runUrl}" target="_blank">查看進度</a>` : '';
-        showStatus('step3-status', `渲染中... ${timeStr}（約 10 分鐘）${link}`, 'running');
+        $('render-title').textContent = '正在渲染中...';
       }
     }, 1000);
 
@@ -1166,16 +1273,23 @@
         );
         const data = await res.json();
         const run = (data.workflow_runs || []).find(r => new Date(r.created_at) >= new Date(triggerTime));
-        if (run) { runId = run.id; runUrl = run.html_url; }
+        if (run) {
+          runId = run.id;
+          runUrl = run.html_url;
+          addLog(`找到 Run #${runId}，環境初始化中`, 'success');
+        }
       } catch {}
     }
 
     if (!runId) {
       clearInterval(elapsedTimer);
+      addLog('找不到 Actions run', 'error');
       showStatus('step3-status', '找不到 Actions run。<a href="https://github.com/' + REPO + '/actions" target="_blank">手動查看</a>', 'error');
+      $('step3-status').style.display = 'block';
       return;
     }
 
+    let lastStatus = '';
     while (true) {
       await new Promise(r => setTimeout(r, 15000));
       try {
@@ -1185,12 +1299,20 @@
         );
         const run = await res.json();
         runUrl = run.html_url;
+        const statusStr = `${run.status}/${run.conclusion || '-'}`;
+        if (statusStr !== lastStatus) {
+          lastStatus = statusStr;
+          if (run.status === 'in_progress') addLog(`渲染進行中 · <a href="${runUrl}" target="_blank">查看進度</a>`, 'info');
+        }
         if (run.status === 'completed') {
           clearInterval(elapsedTimer);
           if (run.conclusion === 'success') {
+            addLog('渲染完成，正在取得影片連結...', 'success');
             await fetchRelease();
           } else {
+            addLog(`渲染失敗 (${run.conclusion})`, 'error');
             showStatus('step3-status', `渲染失敗 (${run.conclusion})。<a href="${run.html_url}" target="_blank">查看詳細</a>`, 'error');
+            $('step3-status').style.display = 'block';
           }
           return;
         }
@@ -1207,7 +1329,12 @@
       );
       const rel = await res.json();
       const asset = (rel.assets || []).find(a => a.name.endsWith('.mp4'));
+      addLog('影片製作完成！', 'success');
+      $('render-title').textContent = '✅ 影片完成';
+      $('progress-fill').classList.remove('indeterminate');
+      $('progress-fill').style.width = '100%';
       showStatus('step3-status', '影片製作完成。', 'done');
+      $('step3-status').style.display = 'block';
       loadRecentVideos();
       const area = $('download-area');
       area.style.display = 'block';
@@ -1221,7 +1348,9 @@
         link.target = '_blank';
       }
     } catch {
+      addLog('已完成，請前往 Releases 下載', 'success');
       showStatus('step3-status', '已完成。<a href="https://github.com/' + REPO + '/releases" target="_blank">前往下載</a>', 'done');
+      $('step3-status').style.display = 'block';
     }
   }
 
@@ -1229,6 +1358,13 @@
     $('generate-btn').disabled = false;
     $('render-btn').disabled = false;
     $('download-area').style.display = 'none';
+    $('log-panel').innerHTML = '';
+    $('log-panel').style.display = 'none';
+    $('render-title').textContent = '正在渲染中...';
+    $('progress-fill').classList.add('indeterminate');
+    $('progress-fill').style.width = '0%';
+    $('stat-segments').textContent = '0/5';
+    $('stat-time').textContent = '0s';
     setStep(1);
   }
 
