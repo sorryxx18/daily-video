@@ -724,6 +724,42 @@
           background: rgba(255,255,255,0.025); overflow: hidden; flex-shrink: 0;
         }
         .script-thumbnail img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        /* 範例 chips */
+        .example-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .example-chip {
+            padding: 6px 14px;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            background: var(--bg-elevated);
+            color: var(--text-muted);
+            font-size: 0.82rem;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .example-chip:hover {
+            border-color: var(--primary);
+            color: var(--text);
+            background: rgba(99,102,241,0.08);
+        }
+        /* 示範素材標籤 */
+        .media-tag.demo {
+            position: absolute;
+            top: 6px;
+            left: 6px;
+            padding: 3px 8px;
+            border-radius: 999px;
+            background: rgba(99,102,241,0.22);
+            color: var(--primary-light);
+            border: 1px solid rgba(99,102,241,0.3);
+            font-size: 11px;
+            font-weight: 700;
+        }
         .script-thumbnail.skeleton {
           background: linear-gradient(90deg, var(--bg-elevated) 25%, var(--bg-card) 50%, var(--bg-elevated) 75%);
           background-size: 200% 100%;
@@ -824,6 +860,13 @@
                         <div class="workspace-title-icon"><i class="fas fa-file-lines"></i></div>
                         <div><h2>輸入內容</h2><p>貼上文字，AI 自動生成五段腳本</p></div>
                     </div>
+                </div>
+                <div class="example-chips" id="example-chips">
+                    <span style="font-size:0.8rem;color:var(--text-muted);align-self:center">試試範例：</span>
+                    <button class="example-chip" onclick="loadExample('weather')">⛈️ 天氣快報</button>
+                    <button class="example-chip" onclick="loadExample('ai')">🤖 AI教學</button>
+                    <button class="example-chip" onclick="loadExample('news')">📰 新聞摘要</button>
+                    <button class="example-chip" onclick="loadExample('trend')">🔥 熱門話題</button>
                 </div>
                 <textarea id="raw-text" placeholder="貼上天氣報告、新聞摘要、課程筆記，或任何想轉成影片的文字。"></textarea>
                 <div class="action-bar" style="justify-content:flex-end;margin-top:1rem">
@@ -935,6 +978,25 @@
   const $ = id => document.getElementById(id);
   const REPO = 'sorryxx18/daily-video';
 
+  const EXAMPLE_TEXTS = {
+    weather: `今天全台受梅雨鋒面影響，中部以北及東北部地區有局部大雨，請民眾外出攜帶雨具。氣象局表示，這波鋒面預計持續到明天下午才會逐漸減弱，北部盆地溫度約在22至26度之間，濕度偏高。南部地區雲層較少，陽光偶爾露臉，氣溫則可達32度高溫，民眾注意防曬。`,
+    ai: `OpenAI 今天推出最新版 GPT-4o，在多項基準測試中超越前代模型。新版本支援即時語音對話、圖像理解與程式碼生成，API 費用也大幅降低50%。開發者社群對此反應熱烈，GitHub 上相關開源專案在24小時內增加數千顆星，多家企業宣布將立即整合進自家產品。`,
+    news: `台積電今日宣布，2奈米製程的量產計畫正式確立，預計2025年下半年開始出貨。法人預估，這將讓台積電在先進製程的市占率進一步提升至90%以上。此消息帶動台積電股價盤中一度上漲3%，帶動大盤整體走勢向上。半導體族群全面走揚，聯電、日月光等相關供應鏈也受惠上漲。`,
+    trend: `Netflix 最新韓劇今日上線，首日播放量打破平台亞洲地區紀錄。主演的復仇劇情引發全球觀眾熱議，相關話題在社群媒體上持續延燒，推特全球趨勢榜排名第一。劇迷紛紛在 YouTube 上分享解析影片，相關關鍵字搜尋量在24小時內暴增500倍。`,
+  };
+
+  function loadExample(key) {
+    $('raw-text').value = EXAMPLE_TEXTS[key] || '';
+    $('raw-text').focus();
+  }
+
+  const DEMO_PHOTOS = [
+    'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=300&h=300&fit=crop',
+    'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=300&h=300&fit=crop',
+    'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=300&fit=crop',
+    'https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=300&h=300&fit=crop',
+  ];
+
 
   function showStatus(id, msg, type) {
     const el = $(id);
@@ -1013,9 +1075,15 @@
     window._uploadedPhotos = [];
     window._assignments = {};
 
-    // Reset photo UI
-    $('photo-grid').innerHTML = '';
-    $('photo-grid').className = 'media-grid hidden';
+    // Reset photo UI — pre-fill with demo photos
+    const grid = $('photo-grid');
+    grid.className = 'media-grid';
+    grid.innerHTML = DEMO_PHOTOS.map(url =>
+      `<div class="media-item demo-item">
+        <img src="${url}" alt="示範">
+        <span class="media-tag demo">示範</span>
+      </div>`
+    ).join('');
     $('assign-btn').style.display = 'none';
     $('batch-photo-input').value = '';
 
@@ -1074,6 +1142,7 @@
     window._uploadedPhotos = [];
     window._assignments = {};
 
+    // Clear demo photos and replace with real uploads
     const grid = $('photo-grid');
     grid.innerHTML = '';
     grid.className = 'media-grid';
